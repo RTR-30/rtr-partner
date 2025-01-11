@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "876496899550",
+    "project_id": "rtr-driver-e21dc",
+    "storage_bucket": "rtr-driver-e21dc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:876496899550:android:adb232df225eff98f2614f",
+        "android_client_info": {
+          "package_name": "com.rtr_partner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDV1g01rR-jOAwj85n3yueRUFZJzYrG3io"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

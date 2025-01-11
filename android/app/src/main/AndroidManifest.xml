@@ -1,6 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
 
     <application
       android:name=".MainApplication"
@@ -10,6 +16,10 @@
       android:allowBackup="false"
       android:theme="@style/AppTheme"
       android:supportsRtl="true">
+
+      <meta-data
+        android:name="com.google.android.maps.v2.API_KEY"
+        android:value="AIzaSyA3OUeiBEQBKsv8chC1ioK_EgFbM2ptmz8" />
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
@@ -22,5 +32,6 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
     </application>
 </manifest>
