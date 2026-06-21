@@ -1,10 +1,26 @@
 import axios from "axios";
-import { BookingBaseUrl, DutyList } from "../../../../environment/ApiManager";
+import { BaseUrl, bookingTable, bookings } from "../../../../environment/ApiManager";
 
-export const fetchAllDuty = () => {
-    return axios.get(BookingBaseUrl + DutyList, {
+export const fetchAllDuty = (token: any, limit:any, page:any, lat: any, lng: any) => {
+    return axios.get(`${BaseUrl}${bookingTable}${bookings.allBooking}`, {
+        params:{
+            status:"Created",
+            limit:limit,
+            page:page,
+            lat:lat,
+            lng:lng
+        },
         headers: {
-            'Content-Type': 'application/json',
+            "Authorization": `Bearer ${token}`,
         }
     });
 };
+
+export const UpdateBooking = async (token:any, data:any) => {
+    
+    return axios.post(`${BaseUrl}${bookingTable}${bookings.acceptBooking}`, data,{
+        headers:{
+            Authorization: `Bearer ${token}`,
+        }
+    })
+}

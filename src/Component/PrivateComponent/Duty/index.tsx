@@ -1,57 +1,175 @@
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React, { useState, useEffect } from "react";
 import {
     View,
     TouchableOpacity,
     Text,
-    FlatList
+    FlatList,
+    ActivityIndicator,
+    ToastAndroid,
+    RefreshControl,
+    Image
 } from "react-native";
 
 import Header from "../../../Common/Header/index";
 import Loader from "../../../Common/Loader";
-import { fetchAllDuty } from "./helper";
+import { fetchAllDuty, UpdateBooking } from "./helper";
 
 import RenderList from "./renderList";
+import { useSelector } from "react-redux";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { COLORS } from "../../../utils/ColorCode";
+
+const NoData = require("../../../../assets/Imgs/NoDatas.png");
 
 const DutyScreen = () => {
-    const navigation = useNavigation();
+    const navigation: any = useNavigation();
+    const isEnabled = useSelector((state: any) => state.status.isEnabled);
+    const [token, setToken] = useState<any>(null);
+    const [latlong, setlatLong] = useState<any>(null);
     const value = "Duty";
 
-    const [showScanner, setShowScanner] = useState<boolean>(false);
-    const [dutyData, setDutyData] = useState<any[]>([]);
+    const [showLoader, setShowLoader] = useState<boolean>(false);
+    const [onRefreshing, setOnRefreshing] = useState<boolean>(false);
+    const [footerLoader, setFooterLoader] = useState<boolean>(false);
 
-    const fetchData = async () => {
-        setShowScanner(true);
+    const [dutyData, setDutyData] = useState<any[]>([]);
+    const [totalDataList, setTotalDataList] = useState<any>(null);
+    const [currentPageLimit, setCurrentPageLimit] = useState<any>(10);
+    
+    const fetchData = async (token: any, limit: any, page: any, region: any) => {
+        if (footerLoader) {
+            setShowLoader(false);
+        } else {
+            setShowLoader(true);
+        }
+
         try {
-            const response = await fetchAllDuty();
-            setDutyData(response.data);
+            const response = await fetchAllDuty(token, limit, page, region?.lat, region?.long);
+            setTotalDataList(response.data.total)
+            setDutyData(response.data.bookingList);
         } catch (error) {
-            console.log(error)
+            console.log(error, 'error')
         } finally {
-            setShowScanner(false);
+            setShowLoader(false);
+            setOnRefreshing(false);
+            setFooterLoader(false);
         }
     }
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    const onRefresh = () => {
+        setOnRefreshing(true);
+        setShowLoader(false);
+        setFooterLoader(false);
+        setTotalDataList(null);
+        setCurrentPageLimit(10);
+        setDutyData([]);
+        fetchUserData().then(() => {
+            fetchData(token, currentPageLimit, 1, latlong).catch(() => {
+                ToastAndroid.show("Check Internet Connection", ToastAndroid.SHORT);
+            }).finally(() => {
+                setShowLoader(false);
+                setOnRefreshing(false);
+                setFooterLoader(false);
+            })
+        })
+    }
+
+    const loadMore = () => {
+        setCurrentPageLimit(currentPageLimit + 10);
+        setFooterLoader(true);
+    }
+
+    const fetchUserData = async () => {
+        try {
+            const storedUserData = await AsyncStorage.getItem("UserData");
+            const region: any = await AsyncStorage.getItem("latlong");
+            
+            const tokens: any = await AsyncStorage.getItem("token");
+            if (storedUserData || tokens || region) {
+                const regi = JSON.parse(region);
+                setToken(tokens);
+                setlatLong(regi)
+                await fetchData(tokens, currentPageLimit, 1, regi);
+            }
+        } catch (error) {
+            console.error("Error fetching user data from AsyncStorage:", error);
+        }
+    };
+
+    const renderLoader = () => {
+        return (
+            totalDataList !== dutyData.length && (
+                <View className="items-center my-[16px] h-[20px]">
+                    {
+                        footerLoader && <ActivityIndicator size={"large"} color={"#5a639c"} />
+                    }
+                </View>
+            )
+        )
+    }
+
+    useFocusEffect(
+        React.useCallback(() => {
+          fetchUserData();
+        }, [])
+    );
 
     return (
-        <View style={{ flex: 1 }}>
-            <View style={{ flex: 1, width: '100%' }}>
+        <View style={{ flex: 1, backgroundColor: COLORS.primary }}>
+
+            <View style={{ flex: 1 }}>
                 <Header value={value} />
             </View>
 
-            <View style={{ flex: 9 }}>
-                <View style={{ flex: 1, margin: 10 }}>
-                    <FlatList
-                        data={dutyData}
-                        renderItem={({ item }: any) => <RenderList item={item} />}
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={{ gap: 10 }}
-                        style={{ marginTop: 3 }}
-                    />
-                </View>
+            {
+                showLoader && (
+                    <View style={{ position: 'absolute', height: '100%', width: '100%' }}>
+                        <Loader />
+                    </View>
+                )
+            }
+
+            <View style={{ flex: 9, padding: 10, backgroundColor: '#fff', borderTopLeftRadius: 30, borderTopRightRadius: 30 }}>
+
+                {
+                    !isEnabled ? (
+                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                            <Text style={{ color: 'red', fontSize: 18, fontWeight: '600' }}>You're Offline mode</Text>
+                            <Text style={{ color: 'black', fontSize: 13, fontWeight: '400' }}>Go to home screen to switch <Text style={{ color: 'green', fontWeight: '500' }}>Online</Text> mode</Text>
+
+                            <TouchableOpacity onPress={() => navigation.navigate("Home")} style={{ marginTop: '10%', width: '60%', height: 30, justifyContent: 'center', alignItems: 'center', backgroundColor: 'blue', borderRadius: 10 }}>
+                                <Text style={{ textAlign: 'center', color: 'white', fontSize: 12, fontWeight: '500' }}>Home</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <>
+                            {dutyData.length > 0 ? (
+                                <FlatList
+                                    data={dutyData}
+                                    renderItem={({ item }: any) => <RenderList item={item} setShowLoader={setShowLoader} token={token}/>}
+                                    keyExtractor={(item, index) => index.toString()}
+                                    refreshControl={<RefreshControl refreshing={onRefreshing} onRefresh={onRefresh} tintColor={"#6200EE"} />}
+                                    showsVerticalScrollIndicator={false}
+                                    contentContainerStyle={{ gap: 10 }}
+                                    style={{ marginTop: 3 }}
+                                    ListFooterComponent={renderLoader}
+                                    onEndReached={loadMore}
+                                    onEndReachedThreshold={0}
+                                />
+                            ) : (
+                                <View className="flex-1">
+                                    {!showLoader && (
+                                        <Image
+                                            source={NoData}
+                                            className="h-full w-full"
+                                        />
+                                    )}
+                                </View>
+                            )}
+                        </>
+                    )
+                }
             </View>
         </View>
     );

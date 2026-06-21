@@ -1,14 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     Text,
     TouchableOpacity,
     Image,
-    Modal
+    Modal,
+    ToastAndroid
 } from 'react-native';
 
-const RenderList = ({ item }: any) => {
-    const [detailModal, setDetailModal] = useState<boolean>(false);
+import notifee from "@notifee/react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+// import LocalNotification from "../../../Common/Notification/index";
+
+import { useNavigation } from "@react-navigation/native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { UpdateBooking } from "./helper";
+
+const RenderList = ({ item, setShowLoader, token }: any) => {
+    const navigation: any = useNavigation();
+    const [userData, setUserData] = useState<any>(null);
+
+    const fetchUpdate = async () => {
+        setShowLoader(true);
+        const data = {
+            bookingId: item.Id
+        }
+
+        try {
+            
+            const res = await UpdateBooking(token, data)
+            ToastAndroid.show(res?.data.message, ToastAndroid.SHORT);
+            navigation.navigate("MyDuty");
+        } catch (error:any) {
+            console.log(error);
+            
+            ToastAndroid.show(error, ToastAndroid.SHORT);
+        } finally {
+            setShowLoader(false);
+        }
+    }
 
     const formatDateTime = (dateTime: any, includeTime = true) => {
         if (!dateTime) return "";
@@ -25,95 +55,115 @@ const RenderList = ({ item }: any) => {
         });
     };
 
-    const handleAccept = () => {
-       
+    const formatEndDate = (dateTime: any, includeTime = true) => {
+        if (!dateTime) return "";
+        const parsedDate = new Date(dateTime);
+        return parsedDate.toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+        });
     };
-
+    
     return (
-        <TouchableOpacity style={{ width: '100%', padding: 10, flexDirection: 'row', backgroundColor: '#fff', shadowColor: 'black', elevation: 5, borderWidth: 0.5, borderRadius: 10, height: 100 }}>
-            <View style={{ width: '70%' }}>
-                <View>
-                    <View style={{ flexDirection: 'row' }}>
-                        <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '30%' }}>Trip Date</Text>
-                        <Text style={{ fontWeight: '600', color: 'black', fontSize: 14, width: '70%', }}>: {formatDateTime(item.startDate)}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row' }}>
-                        <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '30%' }}>Name</Text>
-                        <Text style={{ fontWeight: '600', color: 'black', fontSize: 14, width: '70%', }}>: {item.name}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row' }}>
-                        <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '30%' }}>Trip Fair</Text>
-                        <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '70%', }}>: 500 {'\u20B9'}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row' }}>
-                        <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '30%' }}>Trip Mode</Text>
-                        <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '100%', }}>: {item.tripMode}</Text>
-                    </View>
+        <View className="w-full mb-3 rounded-2xl border-black shadow-black border-[0.1px] bg-white" style={{ elevation: 3 }}>
+            <View className="flex-row w-full justify-center rounded-t-2xl items-center">
+                <View className="w-[50%] p-2 bg-green-600 rounded-tl-2xl border-[0.3px]">
+                    <Text className="text-white font-bold text-[18px] text-center">{item.Status}</Text>
+                </View>
+
+                <View className="w-[50%] p-2 bg-yellow-300 rounded-tr-2xl border-[0.3px]">
+                    <Text className={`text-black font-bold text-[18px] text-center`}>Total   ₹ {item.EstimateAmount}</Text>
                 </View>
             </View>
 
-            <View style={{ width: '30%', height: '100%' }}>
-                <TouchableOpacity onPress={() => setDetailModal(true)} style={{ backgroundColor: 'fff', shadowColor: 'black', elevation: 1, borderWidth: 0.5, width: '80%', height: '40%', justifyContent: 'center', alignItems: 'center', borderRadius: 5 }}>
-                    <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '100%', textAlign: 'center' }}>Trip Details</Text>
-                </TouchableOpacity>
+            <View className="flex-row w-full mt-2 p-1">
+                <View className="w-[50%] justify-center items-center">
+                    <Text className="text-black font-bold text-[14px]">Start Date</Text>
+                    <Text className="text-blue-600 font-bold text-[14px]">{item.StartDate}</Text>
+                </View>
 
-                <TouchableOpacity onPress={handleAccept} style={{ backgroundColor: 'fff', shadowColor: 'black', elevation: 1, borderWidth: 0.5, width: '80%', height: '40%', justifyContent: 'center', alignItems: 'center', borderRadius: 5, marginTop: 10 }}>
-                    <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '100%', textAlign: 'center' }}>Accept</Text>
-                </TouchableOpacity>
+                {
+                    item.EndDate && (
+                        <View className="w-[50%] justify-center items-center">
+                            <Text className="text-black font-bold text-[14px]">End Date</Text>
+                            <Text className="text-blue-600 font-bold text-[14px]">{formatEndDate(item.EndDate)}</Text>
+                        </View>
+                    )
+                }
             </View>
 
-            <Modal
-                animationType="slide"
-                visible={detailModal}
-                onRequestClose={() => setDetailModal(false)}
-            >
-                <View style={{ width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
-                    <View style={{ width: '80%', height: '80%', backgroundColor: 'white', borderRadius: 20 }}>
-                        <View style={{ width: '100%' }}>
-                            <TouchableOpacity onPress={() => setDetailModal(false)} style={{ marginLeft: '90%', marginTop: '5%' }}>
-                                <Text style={{ fontWeight: '600', color: 'black', fontSize: 18 }}>X</Text>
+            <View className="w-full p-2">
+                <View className="w-full flex-row">
+                    <View className="w-[100%]">
+                        <View className="w-[100%] flex-row">
+                            <View className="w-[25%]">
+                                <Text className="text-black font-bold text-[14px]">Name</Text>
+                            </View>
+                            <View className="w-[75%]">
+                                <Text className="text-blue-600 font-bold text-[14px]"> :   {item.Name}</Text>
+                            </View>
+                        </View>
+
+                        <View className="w-[100%] flex-row">
+                            <View className="w-[25%]">
+                                <Text className="text-black font-bold text-[14px]">Address</Text>
+                            </View>
+                            <View className="w-[75%]">
+                                <Text className="text-blue-600 font-bold text-[14px]"> :   {item.Address}</Text>
+                            </View>
+                        </View>
+
+                        <View className="w-[100%] flex-row">
+                            <View className="w-[25%]">
+                                <Text className="text-black font-bold text-[14px]">Hours</Text>
+                            </View>
+                            <View className="w-[75%]]">
+                                <Text className="text-blue-600 font-bold text-[14px]"> :   {item.Hours}</Text>
+                            </View>
+                        </View>
+
+                        <View className="w-[100%] flex-row">
+                            <View className="w-[25%]">
+                                <Text className="text-black font-bold text-[14px]">Gear Type</Text>
+                            </View>
+                            <View className="w-[75%]">
+                                <Text className="text-blue-600 font-bold text-[14px]"> :   {item.GearType}</Text>
+                            </View>
+                        </View>
+
+                        <View className="w-[100%] flex-row">
+                            <View className="w-[25%]">
+                                <Text className="text-black font-bold text-[14px]">Payment Status</Text>
+                            </View>
+                            <View className="w-[75%]">
+                                <Text className={`${item.PaymentStatus === "UnPaid" ? "text-red-600" : "text-green-600"} font-bold text-[14px]`}> :   {item.PaymentStatus}</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* <View className="w-[20%] justify-center items-center">
+                        <View className="mt-1 w-full">
+                            <TouchableOpacity className="bg-[#5a639c] rounded-[10px] w-full h-[40px] justify-center items-center">
+                                <Ionicons name="call" size={20} color={"white"} />
                             </TouchableOpacity>
                         </View>
 
-                        <View style={{ width: '100%', padding: 20 }}>
-                            <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                                <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '30%' }}>Name</Text>
-                                <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '70%', }}>: {item.name}</Text>
-                            </View>
-
-                            <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                                <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '30%' }}>Address</Text>
-                                <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '70%', }}>: {item.address}</Text>
-                            </View>
-
-                            <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                                <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '30%' }}>Start Data</Text>
-                                <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '70%', }}>: {formatDateTime(item.startDate)}</Text>
-                            </View>
-
-                            {
-                                item.endDate !== null && (
-                                    <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                                        <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '30%' }}>End Data</Text>
-                                        <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '70%', }}>: {formatDateTime(item.endDate)}</Text>
-                                    </View>
-                                )
-                            }
-
-                            <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                                <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '30%' }}>Hours</Text>
-                                <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '70%', }}>: {item.hours}</Text>
-                            </View>
-
-                            <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                                <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '30%' }}>Trip Mode</Text>
-                                <Text style={{ fontWeight: '600', color: 'black', fontSize: 16, width: '70%', }}>: {item.tripMode}</Text>
-                            </View>
+                        <View className="mt-5 w-full">
+                            <TouchableOpacity className="bg-[#5a639c] rounded-[10px] w-full h-[40px] justify-center items-center">
+                                <Text className="text-white text-center font-bold text-[16px]">View</Text>
+                            </TouchableOpacity>
                         </View>
-                    </View>
+                    </View> */}
                 </View>
-            </Modal>
-        </TouchableOpacity>
+            </View>
+
+            <View className="p-2 w-full justify-around flex-row items-center">
+                <TouchableOpacity onPress={()=>fetchUpdate()} className="w-[70%] justify-center items-center bg-[#5a639c] rounded-xl">
+                    <Text className="text-center text-white font-bold text-[18px]">Click Here To Accept</Text>
+                </TouchableOpacity>
+            </View>
+        </View >
     );
 };
 

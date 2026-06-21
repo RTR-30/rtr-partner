@@ -1,4 +1,7 @@
 {
   "name": "RTR_Partner",
-  "displayName": "RTR_Partner"
+  "displayName": "RTR_Partner",
+  "plugins": [
+    "@notifee/react-native"
+  ]
 }

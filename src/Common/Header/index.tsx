@@ -8,22 +8,43 @@ import {
 
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-const Header = ({value}:any) => {
+const Header = ({
+    value,
+    backNavigate,
+    edit,
+    clickEdit
+}: any) => {
     const navigation = useNavigation();
-    return(
-        <View style={{flex:1, alignItems:'center', justifyContent:'center'}}>
-            <View style={{width:'100%', flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
-                {/* <TouchableOpacity onPress={()=>navigation.goBack()} style={{width:'15%', justifyContent:'center', alignItems:'center'}}>
-                    <Ionicons name="arrow-back" color={"black"} size={24}/>
-                </TouchableOpacity> */}
 
-                <View style={{width:'70%', justifyContent:'center', alignItems:'center'}}>
-                    <Text style={{textAlign:'center', fontSize:18, fontWeight:'bold'}}>{value}</Text>
+    const handleEdit = () => {
+        clickEdit()
+    }
+    return (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ width: '15%', justifyContent: 'center', alignItems: 'center' }}>
+                    {
+                        backNavigate && (
+                            <TouchableOpacity onPress={() => navigation.goBack()} style={{ justifyContent: 'center', alignItems: 'center' }}>
+                                <Ionicons name="arrow-back" color={"white"} size={24} />
+                            </TouchableOpacity>
+                        )
+                    }
                 </View>
 
-                {/* <View style={{width:'15%', justifyContent:'center', alignItems:'center'}}>
-                    
-                </View> */}
+                <View style={{ width: '70%', justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ textAlign: 'center', fontSize: 18, fontWeight: 'bold', color: 'white' }}>{value}</Text>
+                </View>
+
+                <View style={{ width: '15%', justifyContent: 'center', alignItems: 'center' }}>
+                    {
+                        edit && (
+                            <TouchableOpacity onPress={handleEdit} style={{ justifyContent: 'center', alignItems: 'center' }}>
+                                <Text className="text-white font-bold text-[18px]">Edit</Text>
+                            </TouchableOpacity>
+                        )
+                    }
+                </View>
             </View>
         </View>
     )

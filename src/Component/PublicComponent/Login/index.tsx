@@ -8,22 +8,30 @@ import {
     Image,
     TextInput,
     TouchableOpacity,
-    ScrollView
+    ScrollView,
+    ToastAndroid
 } from "react-native";
 
-import Ionicons from "react-native-vector-icons/Ionicons";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { FetchLogin } from "./helper";
 import Loader from "../../../Common/Loader";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useDispatch } from "react-redux";
+import { COLORS } from "../../../utils/ColorCode";
 
-// const LoginImg = require('../../../../assets/Image/CarLogin.png');
+const LoginImg = require('../../../../assets/Imgs/CarLogin.png');
+const Logo = require("../../../../assets/Imgs/Logo.png")
 
 const Login = () => {
-    const navigation = useNavigation();
+    const navigation: any = useNavigation();
+    const dispatch = useDispatch();
 
     const [showLoader, setShowLoader] = useState<boolean>(false);
 
-    const [email, setEmail] = useState<string>("");
-    const [password, setPassword] = useState<string>("");
+    const [email, setEmail] = useState<any>(null);
+    const [password, setPassword] = useState<any>(null);
+
+    const [passwordVisible, setPasswordVisible] = useState(false);
 
     const [errEmail, setErrEmail] = useState<boolean>(false);
     const [errPassword, setErrPassword] = useState<boolean>(false);
@@ -40,30 +48,24 @@ const Login = () => {
     const handleLogin = async () => {
         setShowLoader(true);
 
-        const formData: any = {
+        const data: any = {
             "email": email,
             "password": password
-        };
-
+        }
+        
         try {
-            const response = await FetchLogin(formData);
-            console.log('====================================');
-            console.log(response);
-            console.log('====================================');
+            const response = await FetchLogin(data);
+            
             if (response.status === 200) {
-                const userData: any = {
-                    name: response.data.name,
-                    email: response.data.email,
-                    phoneNumber: response.data.phoneNumber,
-                    id: response.data.id
-                }
-                setEmail("");
-                setPassword("");
-
-                // dispatch(setUser(userData));
+                await AsyncStorage.setItem("UserData", JSON.stringify(response.data.user));
+                await AsyncStorage.setItem("token", response.data.token);
                 navigation.navigate("Home");
-            }
-        } catch (error) {
+                setEmail(null);
+                setPassword(null);
+            };
+            
+        } catch (error:any) {
+            ToastAndroid.show("Login failed. Please try again.", ToastAndroid.SHORT);
             console.log(error);
         } finally {
             setShowLoader(false);
@@ -71,33 +73,33 @@ const Login = () => {
     }
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-            <StatusBar backgroundColor={"#5a639c"} barStyle={"dark-content"} />
+        <SafeAreaView className="flex-1 bg-white">
+            <StatusBar backgroundColor={COLORS.primary} barStyle={"light-content"} />
 
             {
                 showLoader && (
-                    <View style={{ position: 'absolute', height: '100%', width: '100%' }}>
+                    <View className="h-full w-full absolute" style={{zIndex:10}}>
                         <Loader />
                     </View>
                 )
-            }
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+            };
 
-                <View style={{ width:'100%', height:'50%', backgroundColor: '#fff' }}>
-                    {/* <Image
-                        source={LoginImg}
-                        style={{ width:'100%', height:'100%' }}
-                        resizeMode="contain"
-                    /> */}
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }} className="bg-white">
+                <View className="flex-1 justify-center items-center">
+                    <Image
+                        source={Logo}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                    />
                 </View>
 
-                <View style={{ flex: 1, width: '100%', backgroundColor: '#fff', borderRadius: 20, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'black', bottom:30 }}>Login</Text>
-                    <View style={{ width: '90%', backgroundColor: '#ffffff', padding: 5 }}>
-                        <View style={{ padding: 5, backgroundColor: '#ffffff' }}>
-                            <Text style={{ color: 'black', fontSize: 16, fontWeight: '700' }}>Email id :</Text>
+                <View className="flex-2 justify-center items-center" style={{backgroundColor: COLORS.background}}>
+                    <Text className="text-black-700 text-[20px] text-center font-bold">Login</Text>
+                    <View className="w-full justify-center items-center mt-10">
+                        <View className="flex-row w-[90%] justify-center items-center border-[0.5px] rounded-[10px]">
+                            <FontAwesome name="user" color={"black"} size={20} style={{ alignSelf: 'center' }} />
                             <TextInput
-                                style={{ color: 'black', borderWidth: 0.5, borderRadius: 10 }}
+                                style={{ color: 'black', width: '90%' }}
                                 placeholder="Enter email id"
                                 placeholderTextColor={"gray"}
                                 onChangeText={(txt: any) => {
@@ -105,37 +107,56 @@ const Login = () => {
                                     setErrEmail(!txt)
                                 }}
                             />
-                            {errEmail && <Text style={{ color: "red", fontWeight: "400", }}>mail is required</Text>}
                         </View>
+                        {errEmail && <Text className="text-red-600 font-semibold w-full ml-10">mail is required</Text>}
+                    </View>
 
-                        <View style={{ padding: 5, backgroundColor: '#ffffff' }}>
-                            <Text style={{ color: 'black', fontSize: 16, fontWeight: '700' }}>Password :</Text>
+                    <View className="w-full justify-center items-center mt-5">
+                        <View className="flex-row w-[90%] justify-center items-center border-[0.5px] rounded-[10px]">
+                            <FontAwesome name="lock" size={20} color={"black"} style={{ alignSelf: 'center' }} />
                             <TextInput
-                                style={{ color: 'black', borderWidth: 0.5, borderRadius: 10 }}
+                                style={{ color: 'black', width: '80%' }}
                                 placeholder="Enter password"
                                 placeholderTextColor={"gray"}
+                                secureTextEntry={!passwordVisible}
                                 onChangeText={(txt: any) => {
                                     setPassword(txt);
                                     setErrPassword(!txt);
                                 }}
                             />
-                            {errPassword && <Text style={{ color: "red", fontWeight: '400' }}>password is required</Text>}
+                            <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)} style={{ width: '10%' }}>
+                                <FontAwesome name={!passwordVisible ? "eye" : "eye-slash"} size={20} color="black" />
+                            </TouchableOpacity>
                         </View>
-                    </View>
+                        {errPassword && <Text className="text-red-600 font-semibold w-full ml-10">password is required</Text>}
 
-                    <View style={{ marginTop: 20, width: '90%', justifyContent: 'center', alignItems: 'center' }}>
-                        <TouchableOpacity
-                            // onPress={()=>navigation.navigate("Home")}
-                            onPress={checkCondition}
-                            style={{ width: '50%', height: 40, backgroundColor: '#9400FF', justifyContent: 'center', alignItems: 'center', borderRadius: 10 }}>
-                            <Text style={{ color: 'white', fontWeight: '900', fontSize: 18 }}>Login</Text>
+                    </View>
+                    <View className="w-full">
+                        <TouchableOpacity className="self-end mr-5" onPress={()=>navigation.navigate("ForgetPassword")}>
+                            <Text className="text-[16px] font-bold" style={{color: COLORS.primary}}>Forget Password</Text>
                         </TouchableOpacity>
                     </View>
 
-                    <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                        <Text style={{ color: 'black', fontSize: 16, fontWeight: '700' }}>Don't have a account ? </Text>
-                        <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-                            <Text style={{ color: '#5a639c', fontSize: 16, fontWeight: '700' }}>Creare Account</Text>
+                    <View className="mt-10 w-[90%] justify-center items-center">
+                        <TouchableOpacity
+                            onPress={checkCondition} style={{backgroundColor: COLORS.primary}}
+                            className="w-[50%] h-[40px] justify-center items-center rounded-[10px]"
+                        >
+                            <Text className="text-white text-[18px] font-bold">Login</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View className="mb-5 mt-10 flex-row">
+                        <Text className="text-black-500 text-[16px] font-bold">Don't have a account ? </Text>
+                        <TouchableOpacity onPress={() => navigation.navigate("SignUp", { referral: false})}>
+                            <Text className="text-[16px] font-bold" style={{color: COLORS.primary}}>Create Account</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View className="flex-row mb-3">
+                        <Text className="text-black-500 text-[16px] font-bold">Do have any referal ? </Text>
+                        <TouchableOpacity onPress={() => navigation.navigate("SignUp", { referral: true})}>
+                            <Text className="text-[16px] font-bold" style={{color: COLORS.primary}}>Referal</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

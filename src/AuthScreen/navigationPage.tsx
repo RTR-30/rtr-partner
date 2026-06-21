@@ -7,10 +7,20 @@ import Login from "../Component/PublicComponent/Login/index";
 import SignUp from "../Component/PublicComponent/Signup/index";
 import Home from "../Component/PrivateComponent/Home/index";
 import DutyScreen from "../Component/PrivateComponent/Duty/index";
+import MyDuty from "../Component/PrivateComponent/MyDuty/index";
 import PaymentScreen from "../Component/PrivateComponent/Payment/index";
 import MenuScreen from "../Component/PrivateComponent/Menu/index";
+import MyOrder from "../Component/PrivateComponent/MyOrder/index";
+import HelpAndFeedback from "../Component/PrivateComponent/HelpAndFeedback/index";
+import ContactUs from "../Component/PrivateComponent/ContactUs/index";
+import ForgetPassword from "../Component/PublicComponent/Login/forgetPassword";
+import MyReferal from "../Component/PrivateComponent/MyReferal";
+import Profile from "../Component/PrivateComponent/Profile";
+
+import TripDetails from "../Component/PrivateComponent/Duty/TripDetails";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/Ionicons";
+import { COLORS } from "../utils/ColorCode";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -26,23 +36,23 @@ const TabNavigator = () => (
                     iconName = focused ? "home" : "home-outline";
                 } else if (route.name === "Duty") {
                     iconName = focused ? "briefcase" : "briefcase-outline";
-                } else if (route.name === "Payment") {
+                } else if (route.name === "MyDuty") {
+                    iconName = focused ? "clipboard" : "clipboard-outline";
+                } else if (route.name === "Wallet") {
                     iconName = focused ? "card" : "card-outline";
                 } else if (route.name === "Menu") {
                     iconName = focused ? "menu" : "menu-outline";
-                }
+                } 
 
                 return <Icon name={iconName} size={size} color={color} />;
             },
-            tabBarActiveTintColor: "#007bff", 
+            tabBarActiveTintColor: COLORS.primary, 
             tabBarInactiveTintColor: "gray",  
             tabBarStyle: {
                 backgroundColor: "#f8f9fa", 
                 borderTopWidth: 0,          
                 height: 60,                 
                 paddingBottom: 10,
-                borderTopLeftRadius:30,
-                borderTopRightRadius:30,       
             },
             tabBarLabelStyle: {
                 fontSize: 12,               
@@ -52,7 +62,8 @@ const TabNavigator = () => (
     >
         <Tab.Screen name="Home" component={Home} />
         <Tab.Screen name="Duty" component={DutyScreen} />
-        <Tab.Screen name="Payment" component={PaymentScreen} />
+        <Tab.Screen name="MyDuty" component={MyDuty} />
+        <Tab.Screen name="Wallet" component={PaymentScreen} />
         <Tab.Screen name="Menu" component={MenuScreen} />
     </Tab.Navigator>
 )
@@ -68,6 +79,13 @@ const NavigationPage = () => {
                 <Stack.Screen name="Login" component={Login}/>
                 <Stack.Screen name="SignUp" component={SignUp} />
                 <Stack.Screen name="Home" component={TabNavigator} />
+                <Stack.Screen name="TripDetails" component={TripDetails} />
+                <Stack.Screen name="MyOrder" component={MyOrder} />
+                <Stack.Screen name="HelpAndFeedback" component={HelpAndFeedback} />
+                <Stack.Screen name="ContactUs" component={ContactUs} />
+                <Stack.Screen name="ForgetPassword" component={ForgetPassword} />
+                <Stack.Screen name="MyReferal" component={MyReferal}/>
+                <Stack.Screen name="Profile" component={Profile}/>
             </Stack.Navigator>
         </NavigationContainer>
     )
