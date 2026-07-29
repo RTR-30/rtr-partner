@@ -86,12 +86,6 @@ const Profile = () => {
     }
 
     useEffect(() => {
-        if(profile.img !== ''){
-            handleUpdate()
-        }
-    },[profile.img])
-
-    useEffect(() => {
         getUserData();
     }, []);
     return (
@@ -124,6 +118,7 @@ const Profile = () => {
                                         ...profile,
                                         img: image.path,
                                     });
+                                    handleUpdate()
                                 }}
                             />
                         </View>
@@ -192,7 +187,7 @@ const Profile = () => {
                                     keyboardType="email-address"
                                     placeholder="Enter Email Address"
                                     className="text-base text-black py-4"
-                                    readOnly={!edit}
+                                    readOnly={true}
                                 />
                             </View>
                         </View>

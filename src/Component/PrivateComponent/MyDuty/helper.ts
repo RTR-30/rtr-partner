@@ -1,5 +1,5 @@
 import axios from "axios";
-import { BaseUrl, bookings, bookingTable, ridersForm } from "../../../../environment/ApiManager";
+import { BaseUrl, bookings, bookingTable, paymentApis, paymentBase, ridersForm } from "../../../../environment/ApiManager";
 
 export const AcceptList = async (token: any) => {
     return axios.get(`${BaseUrl}${bookingTable}${bookings.acceptList}`,{
@@ -41,6 +41,26 @@ export const EndRideService = async (token: any, data: any) => {
     })
 }
 
-export const PaymentService = async () => {
-    
+export const CashCollectService = async (token: any, payload: any) => {
+    return axios.post(`${BaseUrl}${paymentBase}${paymentApis.cashCollect}`, payload, {
+        headers:{
+            Authorization: `Bearer ${token}`,
+        }
+    })
+}
+
+export const onlinePaymentService = async (token: any, payload: any) => {
+    return axios.post(`${BaseUrl}${paymentBase}${paymentApis.cashFree}`, payload, {
+        headers:{
+            Authorization: `Bearer ${token}`,
+        }
+    })
+}
+
+export const verifyPaymentService = async (token: any, payload: any) => {
+    return axios.post(`${BaseUrl}${paymentBase}${paymentApis.verify}`, payload, {
+        headers:{
+            Authorization: `Bearer ${token}`,
+        }
+    })
 }

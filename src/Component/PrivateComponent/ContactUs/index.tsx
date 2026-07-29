@@ -16,7 +16,7 @@ const ContactUs = () => {
     const backNavigate = true;
 
     const randomNumber = (contectMethod: any) => {
-        let call: string[] = ["6374335982", "8124301328", "9080734527"];
+        let call: string[] = ["6374335982", "9080734527"];
 
         if (contectMethod === "call") {
             let randomCall = call[Math.floor(Math.random() * call.length)];

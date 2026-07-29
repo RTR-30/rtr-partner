@@ -41,8 +41,8 @@ const MenuScreen = () => {
                         <Text style={{ color: 'black', fontSize: 18, fontWeight: 600 }}>Profile</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => navigation.navigate("MyOrder")} style={{ justifyContent: 'center', alignItems: 'center', borderWidth: 1, width: '90%', height: 40, borderRadius: 10, backgroundColor: '#fff', marginTop: 10 }}>
-                        <Text style={{ color: 'black', fontSize: 18, fontWeight: 600 }}>My Order</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate("Statistics")} style={{ justifyContent: 'center', alignItems: 'center', borderWidth: 1, width: '90%', height: 40, borderRadius: 10, backgroundColor: '#fff', marginTop: 10 }}>
+                        <Text style={{ color: 'black', fontSize: 18, fontWeight: 600 }}>Statistics</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={() => navigation.navigate("MyReferal")} style={{ justifyContent: 'center', alignItems: 'center', borderWidth: 1, width: '90%', height: 40, borderRadius: 10, backgroundColor: '#fff', marginTop: 10 }}>

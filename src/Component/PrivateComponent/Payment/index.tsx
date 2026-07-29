@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { walletService } from "./helper";
 import RenderPayment from "./renderPayment";
 import { COLORS } from "../../../utils/ColorCode";
+import { showError } from "../../../Common/ToastMessage";
 
 const PaymentScreen = () => {
     const value = "My Wallet"
@@ -35,14 +36,12 @@ const PaymentScreen = () => {
             const { data = [], message = "", success = false } = res?.data
 
             if (success === true) {
-                console.log(data);
-
                 setWalletData(data);
             } else {
-                ToastAndroid.show(message, ToastAndroid.SHORT)
+                showError(message)
             }
         } catch (error: any) {
-            ToastAndroid.show(error, ToastAndroid.SHORT)
+            showError(error)
         } finally {
             setLoading(false)
         }

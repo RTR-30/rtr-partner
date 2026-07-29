@@ -8,25 +8,40 @@ import {
     Alert,
     PermissionsAndroid,
     Modal,
+    Image,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { CancelRideService, EndRideService, StartRideService } from "./helper";
+import { CancelRideService, CashCollectService, EndRideService, onlinePaymentService, StartRideService, verifyPaymentService } from "./helper";
 import { useNavigation } from "@react-navigation/native";
 import Geolocation from "@react-native-community/geolocation";
 import OneTimeCodeTextComponent from "../../../Common/OneTimeCodeText";
 import { showError, showSuccess } from "../../../Common/ToastMessage";
+import { COLORS } from "../../../utils/ColorCode";
+import Feedback from "../../../Common/Feedback";
 
-const RenderHelper = ({ item, token, setLoading, fetchAcceptList }: any) => {
-    console.log(item);
-    
+const RenderHelper = ({ item, token, setLoading, fetchAcceptList, payDetails, setPayDetails }: any) => {
+
     const [region, setRegion] = useState<any>(null);
     const [startRide, setStartRide] = useState<boolean>(false);
     const navigation: any = useNavigation();
     const mapRef: any = useRef(null);
     const [otp, setOtp] = useState<any>(null);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
+    const [msg, setMsg] = useState<any>('Click Verify Button')
+    const [paymentCheck, setPaymentCheck] = useState<boolean>(false);
+
+    const [selectedBookingId, setSelectedBookingId] = useState<any>();
+    const [showFeedback, setShowFeedback] = useState<boolean>(false);
+
+    const openFeedbackModal = () => {
+        setShowFeedback(true);
+    }
+
+    const closeFeedbackModal = () => {
+        fetchAcceptList(token)
+        setShowFeedback(false);
+    }
     
-    console.log(region);
     const requestLocationPermission = async () => {
         try {
             if (Platform.OS === "android") {
@@ -47,7 +62,7 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList }: any) => {
             Geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    
+
                     setRegion({
                         latitude,
                         longitude,
@@ -98,16 +113,18 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList }: any) => {
     };
 
     const CancelRide = async (Id: any) => {
+
         const datas = {
             "bookingId": Id
         }
+
         try {
             const res: any = await CancelRideService(token, datas);
             if (res?.data?.success === true) {
                 navigation.navigate("Duty");
             }
         } catch (error) {
-            console.log(error);
+            showError(error);
         }
     }
 
@@ -121,7 +138,7 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList }: any) => {
             ...(includeTime && {
                 hour: "2-digit",
                 minute: "2-digit",
-                hour12: false,
+                hour12: true,
             }),
         });
     };
@@ -159,22 +176,98 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList }: any) => {
         }
         try {
             const res = await StartRideService(token, payload);
-    
+
             if (res?.data?.success === true) {
                 setStartRide(false);
                 fetchAcceptList(token)
             }
 
         } catch (error) {
-            console.log(error);
-
+            showError(error);
         } finally {
             setLoading(false)
         }
     }
 
-    const paymentApi = () => {
+    const paymentApi = async (item: any) => {
+        setLoading(true)
+        setSelectedBookingId(item?.Id)
+        const payload = {
+            bookingId: item?.Id
+        }
+        try {
+            const res = await onlinePaymentService(token, payload)
+            const { data: { success = false, message = '', payment_link = '', qr_code = '', link_id = '' } } = res
 
+            if (success === true) {
+                setPaymentCheck(true)
+                setPayDetails({
+                    payment_link: payment_link,
+                    qr_code: qr_code,
+                    link_id: link_id,
+                    active: true
+                })
+                showSuccess(message)
+            } else {
+                showError(message)
+            }
+        } catch (error) {
+            showError(error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const verifyPayment = async (linkId: any, token: any) => {
+        setLoading(true);
+        const payload = {
+            linkId: linkId
+        }
+        try {
+            const res = await verifyPaymentService(token, payload);
+            const { data: { success = false, message = '', status = '' } } = res;
+            if (success === true) {
+                if (status === "PENDING") {
+                    setMsg(message)
+                } else if (status === "SUCCESS") {
+                    showSuccess(message)
+                    modalClose();
+                    // fetchAcceptList(token)
+                } else {
+                    setMsg(message)
+                }
+            } else {
+                showError(message)
+            }
+        } catch (error) {
+            showError(error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleCashCollect = async (bookingData: any) => {
+        setLoading(true);
+        setSelectedBookingId(bookingData?.Id)
+        const payload = {
+            bookingId: bookingData.Id
+        }
+
+        try {
+            const res = await CashCollectService(token, payload)
+            const { data: { success = false, message = '' }, status = 0 } = res
+            if (status === 200) {
+                showSuccess(message);
+                modalClose()
+            } else {
+                showError(message)
+            }
+
+        } catch (error) {
+            showError(error)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const modalOpen = () => {
@@ -182,6 +275,7 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList }: any) => {
     }
 
     const modalClose = () => {
+        openFeedbackModal()
         setModalVisible(false)
     }
 
@@ -191,14 +285,10 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList }: any) => {
             "bookingId": data.Id
         }
         try {
-            const res = await EndRideService(token, payload);
-            if (res?.data?.success === true) {
-                console.log(res?.data?.message);
-
-            }
+            const res = await EndRideService(token, payload)
+            fetchAcceptList(token)
         } catch (error) {
-            console.log(error);
-
+            showError(error);
         } finally {
             setLoading(false)
         }
@@ -236,7 +326,7 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList }: any) => {
             <View className="flex-row w-full mt-2 p-1">
                 <View className="w-[50%] justify-center items-center">
                     <Text className="text-black font-bold text-[14px]">Start Date</Text>
-                    <Text className="text-blue-600 font-bold text-[14px]">{item.StartDate}</Text>
+                    <Text className="text-blue-600 font-bold text-[14px]">{formatDateTime(item.StartDate)}</Text>
                 </View>
 
                 {
@@ -317,21 +407,26 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList }: any) => {
             {
                 item.Status === "InProgress" ? (
                     <View className="p-2 w-full justify-around flex-row items-center">
-                        <TouchableOpacity onPress={() => modalOpen()} className="w-[40%] justify-center items-center bg-red-500 p-1 rounded-xl">
+                        <TouchableOpacity onPress={() => handleEndRide(item)} className="w-[40%] justify-center items-center bg-red-500 p-1 rounded-xl">
                             <Text className="text-center text-white font-bold text-[18px]">End Ride</Text>
                         </TouchableOpacity>
                     </View>
-                ) : (
+                ) : item.Status === "PaymentPending" ?
                     <View className="p-2 w-full justify-around flex-row items-center">
-                        <TouchableOpacity onPress={() => StartRideOtp()} className={`w-[40%] justify-center items-center bg-green-500 p-1 rounded-xl`}>
-                            <Text className="text-center text-white font-bold text-[18px]">Start Ride</Text>
+                        <TouchableOpacity onPress={modalOpen} className="w-[40%] justify-center items-center bg-green-500 p-1 rounded-xl">
+                            <Text className="text-center text-white font-bold text-[18px]">Pay</Text>
                         </TouchableOpacity>
+                    </View> : (
+                        <View className="p-2 w-full justify-around flex-row items-center">
+                            <TouchableOpacity onPress={() => StartRideOtp()} className={`w-[40%] justify-center items-center bg-green-500 p-1 rounded-xl`}>
+                                <Text className="text-center text-white font-bold text-[18px]">Start Ride</Text>
+                            </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => CancelRide(item.Id)} className="w-[40%] justify-center items-center bg-red-500 p-1 rounded-xl">
-                            <Text className="text-center text-white font-bold text-[18px]">Cancel Ride</Text>
-                        </TouchableOpacity>
-                    </View>
-                )
+                            <TouchableOpacity onPress={() => CancelRide(item.Id)} className="w-[40%] justify-center items-center bg-red-500 p-1 rounded-xl">
+                                <Text className="text-center text-white font-bold text-[18px]">Cancel Ride</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )
             }
 
             {startRide && (
@@ -341,7 +436,7 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList }: any) => {
                     animationType="fade"
                     onRequestClose={() => setStartRide(false)}
                 >
-                    <View className="absolute w-full h-full justify-center items-center">
+                    <View className="absolute w-full h-full justify-center items-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
                         <View className="w-96 h-60 justify-center items-center bg-slate-200 rounded-3xl">
                             <View className=" justify-center items-center">
                                 <Text className="text-[20px] text-black">Enter Otp</Text>
@@ -373,37 +468,93 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList }: any) => {
                     animationType="fade"
                     onRequestClose={() => setModalVisible(false)}
                 >
-                    <View className="absolute w-full h-full justify-center items-center">
-                        <View className="w-96 h-40 items-center bg-slate-200 rounded-3xl">
+                    <View className="absolute w-full h-full justify-center items-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                        <View className="w-96 items-center bg-slate-200 rounded-3xl p-3">
                             <View className="w-full flex-row p-2">
                                 <View className="w-[90%] justify-center items-center">
                                     <Text className="text-[20px] font-bold text-black">Payment Type</Text>
                                 </View>
 
                                 <View className="w-[10%] justify-center items-center">
-                                    <TouchableOpacity className="" onPress={() => modalClose()}>
+                                    <TouchableOpacity className="" onPress={() => setModalVisible(false)}>
                                         <Text className="text-[15px] text-red-600 font-bold">X</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
 
-                            <View className="justify-between w-full items-center flex-row p-2 mt-8">
-                                <View className="w-[45%] h-10 justify-center items-center rounded-xl">
-                                    <TouchableOpacity className="bg-green-600 w-full h-full justify-center items-center rounded-xl">
-                                        <Text className="text-center text-white font-bold text-[13px]">Online Payment</Text>
-                                    </TouchableOpacity>
+                            <View className="w-full p-2">
+                                <View className="my-2 flex-row justify-center items-center">
+                                    <Text className="text-black text-[14px] font-bold w-[50%]">Final DriverShare  </Text>
+                                    <Text className="text-black text-[14px] font-bold w-[50%]">:   ₹ {item?.FinalDriverShare}</Text>
                                 </View>
 
-                                <View className="w-[45%] h-10 justify-center items-center rounded-xl">
-                                    <TouchableOpacity className="bg-green-600 w-full h-full justify-center items-center rounded-xl">
-                                        <Text className="text-center text-white font-bold text-[13px]">Cash on Hand</Text>
-                                    </TouchableOpacity>
+                                <View className="my-2 flex-row justify-center items-center">
+                                    <Text className="text-black text-[14px] font-bold w-[50%]">Tax Amount  </Text>
+                                    <Text className="text-black text-[14px] font-bold w-[50%]">:   ₹ {item?.TaxAmount}</Text>
+                                </View>
+
+                                <View className="my-2 flex-row justify-center items-center">
+                                    <Text className="text-black text-[14px] font-bold w-[50%]">Platform Fee  </Text>
+                                    <Text className="text-black text-[14px] font-bold w-[50%]">:   ₹ {item?.PlatformFeeAmount}</Text>
+                                </View>
+
+                                <View className="my-2 flex-row justify-center items-center">
+                                    <Text className="text-red-600 text-[14px] font-bold w-[50%]">Total Amount  </Text>
+                                    <Text className="text-red-600 text-[14px] font-bold w-[50%]">:   ₹ {item?.FinalAmount}</Text>
                                 </View>
                             </View>
+
+                            {payDetails?.active === true ?
+                                <View className="w-full p-2 justify-center items-center">
+                                    <Text className="text-[18px] font-bold text-blue-900">Scan Qr</Text>
+                                    <View className="mt-2 w-[50%] h-40">
+                                        <Image
+                                            source={{
+                                                uri: `${payDetails?.qr_code}`,
+                                            }}
+                                            resizeMode="cover"
+                                            className="h-full w-full"
+                                        />
+                                    </View>
+
+                                    <View className="w-full justify-center items-center mt-10">
+                                        <Text className="text-red-600 text-[14px] font-bold">{msg}</Text>
+                                    </View>
+
+                                    <View className="mt-4 w-[70%] p-2">
+                                        <TouchableOpacity onPress={() => verifyPayment(payDetails?.link_id, token)} className="p-2 rounded-lg justify-center items-center" style={{ backgroundColor: COLORS.primary }}>
+                                            <Text className="text-center text-[14px] text-white font-bold">Verify Payment</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View> :
+                                <View className="justify-between w-full items-center flex-row p-2 mt-8">
+                                    <View className="w-[45%] h-10 justify-center items-center rounded-xl">
+                                        <TouchableOpacity onPress={() => paymentApi(item)} className="bg-green-600 w-full h-full justify-center items-center rounded-xl">
+                                            <Text className="text-center text-white font-bold text-[13px]">Online Payment</Text>
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    <View className="w-[45%] h-10 justify-center items-center rounded-xl">
+                                        <TouchableOpacity onPress={() => handleCashCollect(item)} className="bg-blue-500 w-full h-full justify-center items-center rounded-xl">
+                                            <Text className="text-center text-white font-bold text-[13px]">Cash on Hand</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            }
+
 
                         </View>
                     </View>
                 </Modal> : null
+            }
+
+            {showFeedback ?
+                <Feedback 
+                    visible={showFeedback} 
+                    onClose={() => closeFeedbackModal()} 
+                    bookingdata={selectedBookingId}
+                    tokens={token}
+                /> : null
             }
         </View>
     )

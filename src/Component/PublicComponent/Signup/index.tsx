@@ -19,6 +19,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import OneTimeCodeTextComponent from "../../../Common/OneTimeCodeText";
 import { appLogo } from "../../../Common/images/index";
 import { COLORS } from "../../../utils/ColorCode";
+import { showError } from "../../../Common/ToastMessage";
 
 const SignUp = () => {
     const navigation: any = useNavigation();
@@ -71,12 +72,10 @@ const SignUp = () => {
             
             try {
                 const response = await signUpVerifyingMail(data)
-                ToastAndroid.show(response?.data.message, ToastAndroid.SHORT);
+                showError(response?.data.message);
                 toggleModal()
             } catch (error: any) {
-                console.log(error, "error");
-                
-                ToastAndroid.show(error.response.data.message, ToastAndroid.SHORT)
+                showError(error)
             } finally{
                 setShowLoader(false);
             }

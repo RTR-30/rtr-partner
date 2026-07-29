@@ -36,7 +36,6 @@ const forgetPassword = () => {
         }
         try {
             const res = await VerifyingMail(data);
-            console.log(res);
             
             setMailVerify(res?.data.success)
             setTimer(60);
@@ -109,9 +108,7 @@ const forgetPassword = () => {
     }, [timer]);
 
     const handleResend = () => {
-        // console.log('Resend OTP triggered');
         verifyMail();
-        // setTimer(60);
     };
 
     return (

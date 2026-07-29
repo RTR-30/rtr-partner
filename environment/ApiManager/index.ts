@@ -1,4 +1,4 @@
-export const BaseUrl = "http://192.168.29.53:8000/"
+export const BaseUrl = "http://10.224.117.206:8000/"
 // export const BaseUrl = "http://readytoride.in/";
 export const Google_map = "AIzaSyCATOPiFqH1MavVSTy_TKSZ3hfK8II3Www";
 
@@ -9,6 +9,8 @@ export const ForgetTable = "forget/";
 export const bookingTable = "booking/";
 export const verificationTable = "partner-verification/";
 export const paymentBase = "payment";
+export const packageBase = "package";
+export const FeedBackBase = "feedback";
 
 export const Auth = {
     signupapi : "partner-createUser",
@@ -29,7 +31,8 @@ export const bookings = {
     updateBooking : "updateBooking",
     acceptBooking : "selectBooking",
     acceptList : 'driverBookings',
-    cancelbooking: 'cancelBooking'
+    cancelbooking: 'cancelBooking',
+    gear_Type: 'gear-types'
 };
 
 export const verificationDetails = {
@@ -45,6 +48,27 @@ export const wallet = {
     transactions_history : "/user-transactions" 
 }
 
+export const paymentApis = {
+    cashCollect: '/cash/collect',
+    cashFree: '/cashfree/create-order',
+    verify: '/cashfree/verify',
+}
+
 export const referalApi = {
     referal_history: 'referral/history'
+}
+
+export const statisticsApi = {
+    statistics: 'statistics'
+}
+
+export const PackageApis = {
+    purchasePackage: '/purchase',
+    myPackages: '/my-status',
+    verifyPament: '/verify'
+}
+
+export const FeedbackApis = {
+    Tags: '/tags?targetType=user',
+    Submit: '/submit'
 }

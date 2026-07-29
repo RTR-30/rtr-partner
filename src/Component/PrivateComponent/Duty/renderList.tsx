@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { UpdateBooking } from "./helper";
+import { showError, showSuccess } from "../../../Common/ToastMessage";
 
 const RenderList = ({ item, setShowLoader, token }: any) => {
     const navigation: any = useNavigation();
@@ -27,14 +28,11 @@ const RenderList = ({ item, setShowLoader, token }: any) => {
         }
 
         try {
-            
             const res = await UpdateBooking(token, data)
-            ToastAndroid.show(res?.data.message, ToastAndroid.SHORT);
+            showSuccess(res?.data.message);
             navigation.navigate("MyDuty");
         } catch (error:any) {
-            console.log(error);
-            
-            ToastAndroid.show(error, ToastAndroid.SHORT);
+            showError(error)
         } finally {
             setShowLoader(false);
         }
@@ -50,7 +48,7 @@ const RenderList = ({ item, setShowLoader, token }: any) => {
             ...(includeTime && {
                 hour: "2-digit",
                 minute: "2-digit",
-                hour12: false,
+                hour12: true,
             }),
         });
     };
@@ -80,7 +78,7 @@ const RenderList = ({ item, setShowLoader, token }: any) => {
             <View className="flex-row w-full mt-2 p-1">
                 <View className="w-[50%] justify-center items-center">
                     <Text className="text-black font-bold text-[14px]">Start Date</Text>
-                    <Text className="text-blue-600 font-bold text-[14px]">{item.StartDate}</Text>
+                    <Text className="text-blue-600 font-bold text-[14px]">{formatDateTime(item?.StartDate)}</Text>
                 </View>
 
                 {

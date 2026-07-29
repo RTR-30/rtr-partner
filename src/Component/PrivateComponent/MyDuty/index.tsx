@@ -12,6 +12,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { AcceptList } from "./helper";
 import Loader from "../../../Common/Loader";
 import { COLORS } from "../../../utils/ColorCode";
+import { showError } from "../../../Common/ToastMessage";
 
 const NoData = require("../../../../assets/Imgs/NoDatas.png");
 
@@ -20,14 +21,25 @@ const MyDuty = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [token, setToken] = useState<any>(null);
     const [data, setData] = useState<any[]>([]);
-    
+
+    const [payDetails, setPayDetails] = useState<any>({
+        payment_link: '',
+        qr_code: '',
+        link_id: '',
+        active: false
+    })
+
     const fetchAcceptList = async (tokens?: any) => {
         setLoading(true);
         try {
             const res = await AcceptList(tokens);
-            setData(res?.data?.bookings)
+            const { data: { bookings = [], message = '', success = false } } = res
+            
+            if (success === true) {
+                setData(bookings)
+            }
         } catch (error) {
-            ToastAndroid.show("Error Accept List", ToastAndroid.SHORT);
+            showError("Error Accept List");
         } finally {
             setLoading(false);
         }
@@ -41,7 +53,7 @@ const MyDuty = () => {
                 await setToken(tokens);
             }
         } catch (error) {
-            console.error("Error fetching user data from AsyncStorage:", error);
+            showError(error);
         }
     };
 
@@ -67,14 +79,23 @@ const MyDuty = () => {
                 {data?.length > 0 ? (
                     <FlatList
                         data={data}
-                        renderItem={({ item }: any) => <RenderHelper item={item} token={token} setLoading={setLoading} fetchAcceptList={fetchAcceptList}/>}
+                        renderItem={({ item }: any) => 
+                            <RenderHelper 
+                                item={item} 
+                                token={token} 
+                                setLoading={setLoading} 
+                                fetchAcceptList={fetchAcceptList}
+                                payDetails={payDetails}
+                                setPayDetails={setPayDetails}
+                            />
+                        }
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={{ gap: 10 }}
                         style={{ marginTop: 3 }}
                     />
                 ) : (
                     <View className="flex-1">
-                        {!loading && 
+                        {!loading &&
                             <Image
                                 source={NoData}
                                 className="h-full w-full"

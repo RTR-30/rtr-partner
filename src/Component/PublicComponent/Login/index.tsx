@@ -18,6 +18,7 @@ import Loader from "../../../Common/Loader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch } from "react-redux";
 import { COLORS } from "../../../utils/ColorCode";
+import { showError } from "../../../Common/ToastMessage";
 
 const LoginImg = require('../../../../assets/Imgs/CarLogin.png');
 const Logo = require("../../../../assets/Imgs/Logo.png")
@@ -65,8 +66,7 @@ const Login = () => {
             };
             
         } catch (error:any) {
-            ToastAndroid.show("Login failed. Please try again.", ToastAndroid.SHORT);
-            console.log(error);
+            showError("Login failed. Please try again.");
         } finally {
             setShowLoader(false);
         }

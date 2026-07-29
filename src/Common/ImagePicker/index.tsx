@@ -1,6 +1,7 @@
 import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import ImageCropPicker from "react-native-image-crop-picker";
+import { showError } from "../ToastMessage";
 
 interface Props {
     onImageSelect: (image: any) => void;
@@ -19,7 +20,7 @@ const CustomImagePicker = ({ onImageSelect, primaryColor }: Props) => {
                 onImageSelect(image);
             })
             .catch((err) => {
-                console.log("Camera Error:", err);
+                showError("Camera Error");
             });
     };
 
@@ -33,7 +34,7 @@ const CustomImagePicker = ({ onImageSelect, primaryColor }: Props) => {
                 onImageSelect(image);
             })
             .catch((err) => {
-                console.log("Gallery Error:", err);
+                showError("Gallery Error");
             });
     };
 

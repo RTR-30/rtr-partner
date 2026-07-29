@@ -10,9 +10,9 @@ import DutyScreen from "../Component/PrivateComponent/Duty/index";
 import MyDuty from "../Component/PrivateComponent/MyDuty/index";
 import PaymentScreen from "../Component/PrivateComponent/Payment/index";
 import MenuScreen from "../Component/PrivateComponent/Menu/index";
-import MyOrder from "../Component/PrivateComponent/MyOrder/index";
 import HelpAndFeedback from "../Component/PrivateComponent/HelpAndFeedback/index";
 import ContactUs from "../Component/PrivateComponent/ContactUs/index";
+import Statistics from "../Component/PrivateComponent/Statistics/index";
 import ForgetPassword from "../Component/PublicComponent/Login/forgetPassword";
 import MyReferal from "../Component/PrivateComponent/MyReferal";
 import Profile from "../Component/PrivateComponent/Profile";
@@ -80,7 +80,7 @@ const NavigationPage = () => {
                 <Stack.Screen name="SignUp" component={SignUp} />
                 <Stack.Screen name="Home" component={TabNavigator} />
                 <Stack.Screen name="TripDetails" component={TripDetails} />
-                <Stack.Screen name="MyOrder" component={MyOrder} />
+                <Stack.Screen name="Statistics" component={Statistics} />
                 <Stack.Screen name="HelpAndFeedback" component={HelpAndFeedback} />
                 <Stack.Screen name="ContactUs" component={ContactUs} />
                 <Stack.Screen name="ForgetPassword" component={ForgetPassword} />

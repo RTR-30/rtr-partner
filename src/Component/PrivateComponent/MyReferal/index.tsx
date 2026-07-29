@@ -34,6 +34,7 @@ const MyReferal = () => {
         Clipboard.setString(userData?.referral_code);
     };
 
+console.log(referalHistory);
 
     const fetchReferalHistory = async (token: any) => {
         setLoading(true);
@@ -41,7 +42,6 @@ const MyReferal = () => {
         try {
             const res = await referalHistoryService(token)
             const { data: { history = [], success = false } } = res
-            console.log(history);
 
             if (success === true) {
                 setReferalHistory(history)
@@ -159,18 +159,24 @@ const MyReferal = () => {
                                 item.id?.toString() || index.toString()
                             }
                             renderItem={({ item }) => (
-                                <View className="bg-white border border-gray-300 rounded-lg p-3 mb-2">
-                                    <Text className="text-black font-semibold">
-                                        Referal id : {item.referee_id}
-                                    </Text>
+                                <View className="w-full flex-row border border-gray-300 bg-white rounded-lg p-3 mb-2">
+                                    <View className="w-[80%]">
+                                        <Text className="text-black font-semibold">
+                                            Name : {item.referee_name}
+                                        </Text>
 
-                                    <Text className="text-gray-500 font-bold">
-                                        Joined : {formatDateTime(item.created_at)}
-                                    </Text>
+                                        <Text className="text-gray-500 font-bold">
+                                            Joined : {formatDateTime(item.created_at)}
+                                        </Text>
 
-                                    <Text className="text-green-600 font-bold mt-1">
-                                        {item.status}
-                                    </Text>
+                                        <Text className="text-green-600 font-bold mt-1">
+                                            {item.status}
+                                        </Text>
+                                    </View>
+
+                                    <View className="w-[20%] justify-center items-center">
+                                        <Text className="text-black font-bold text-[12px]">{item?.rides_completed} / 5</Text>
+                                    </View>
                                 </View>
                             )}
                             ListEmptyComponent={() => (

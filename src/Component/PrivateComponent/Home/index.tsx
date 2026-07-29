@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, Text, Platform, PermissionsAndroid, Alert, Switch, Image, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, Platform, PermissionsAndroid, Alert, Switch, Image, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, FlatList } from "react-native";
 
 import MapView, { Marker, Polyline } from "react-native-maps";
 import Geolocation from "@react-native-community/geolocation";
@@ -8,17 +8,23 @@ import { useDispatch, useSelector } from "react-redux";
 import { toggleStatus } from "../../../redux/reduxReducer";
 import { validateAadhaar } from "../../../Common/AadhaarCardValid/aadharCardValid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { verifyDetailsServices } from "./helper";
+import { GetMyPackageService, PaymentProcessService, verifyDetailsServices } from "./helper";
 import MapViewDirections from "react-native-maps-directions";
 import { Google_map } from "../../../../environment/ApiManager";
+import { showError } from "../../../Common/ToastMessage";
+import { COLORS } from "../../../utils/ColorCode";
+import PaymentRender from "./PaymentRender";
+import PackagePurchase from "../../../Common/PackagePurchase";
 
 const Home = () => {
     const navigation: any = useNavigation();
 
     const [loader, setLoader] = useState<boolean>(false);
-
-    const [showPaymentModal, setShowPaymentModal] = useState<any>(true);
+    const [token, setToken] = useState<any>(null);
+    const [packages, setPackages] = useState<any[]>([]);
+    const [showPaymentModal, setShowPaymentModal] = useState<any>(false);
     const [uploadModal, setUploadModal] = useState<any>(false);
+    const [userData, setUserData] = useState<any>(null);
 
     const [aadhaar, setAadhaar] = useState('');
     const [aadharError, setAadharError] = useState('');
@@ -29,7 +35,6 @@ const Home = () => {
 
     const dispatch = useDispatch();
     const isEnabled = useSelector((state: any) => state.status.isEnabled);
-console.log(region);
 
     //driving license
     const [form, setForm] = useState<any>({
@@ -52,7 +57,7 @@ console.log(region);
         const dateRegex = /^(0[1-9]|[12][0-9]|3[01])[\/\-](0[1-9]|1[0-2])[\/\-]\d{4}$/;
         return dateRegex.test(date);
     };
-    
+
     const validateForm = () => {
         let valid: any = true;
         let tempErrors: any = {};
@@ -90,6 +95,25 @@ console.log(region);
         }
     };
 
+    const PaymentProcess = async (tokens: any) => {
+
+        setLoader(true)
+        try {
+            const res = await PaymentProcessService(tokens);
+            const { data: { data = [], success = false } } = res
+            if (success === true) {
+                setPackages(data)
+            } else {
+                showError(false)
+            }
+
+        } catch (error) {
+            showError(error)
+        } finally {
+            setLoader(false)
+        }
+    }
+
     const renderInput = (label: any, key: any, placeholder: any) => {
         return (
             <>
@@ -105,16 +129,39 @@ console.log(region);
         );
     }
 
-    const toggleSwitch = () => {
-        dispatch(toggleStatus());
+    
+    const toggleSwitch = async (tokens: any) => {
+        setLoader(true)
+        if(isEnabled) {
+            return dispatch(toggleStatus());
+        }
+        try{
+            const res = await GetMyPackageService(tokens);
+            const { data: { success = false, data = {}, message = "" } } = res
+            
+            if(success === true){
+                console.log(data);
+                const myDatas = data === null ? {} : data
+                if (Object.keys(myDatas).length > 0) {
+                    dispatch(toggleStatus());
+                } else {
+                    showError("No package found");
+                    togglePayment()
+                }
+            } else {
+                showError(message)
+            }
+        } catch(error){
+            showError(error)
+        } finally{
+            setLoader(false)
+        }
     };
 
     const toggleDocument = (status: any) => {
-        if (status === true) {
-            setUploadModal(true);
-        } else {
-            setUploadModal(false);
-        }
+        console.log("dsd", status);
+        
+        setUploadModal(status);        
     }
 
     const togglePayment = () => {
@@ -203,18 +250,18 @@ console.log(region);
     const fetchdetails = async (tokens: any) => {
         setLoader(true);
         const data = {
-            "aadhaar": aadhaar,
-            "licensenumber": form.licenseNumber,
-            "fullname": form.name,
-            "dob": form.dob,
-            "expirydate": form.expiryDate
+            aadhaar: aadhaar,
+            licensenumber: form.licenseNumber,
+            fullname: form.name,
+            dob: form.dob,
+            expirydate: form.expiryDate
         }
         try {
             const verifi = await verifyDetailsServices(tokens, data)
 
             setUploadModal(true);
         } catch (error) {
-            console.log(error);
+            showError(error);
         } finally {
             setLoader(false)
         }
@@ -223,13 +270,17 @@ console.log(region);
 
     const fetchUserData = async () => {
         try {
-            const storedUserData = await AsyncStorage.getItem("UserData");
-            const tokens: any = await AsyncStorage.getItem("token");
-            if (storedUserData || tokens) {
-                // setToken(tokens);
-                fetchdetails(tokens);
-                // await fetchData(tokens, currentPageLimit, 1);
-                toggleDocument(true)
+            const storedUserData: any = await AsyncStorage.getItem("UserData");
+            const usertoken: any = await AsyncStorage.getItem("token");
+
+            if (storedUserData || usertoken) {
+                const userDatas = JSON.parse(storedUserData)
+                const userTokens = usertoken
+                const verifyDoc = userDatas?.verify;
+                
+                setToken(userTokens)
+                PaymentProcess(usertoken)
+                setUserData(userDatas)
             }
         } catch (error) {
             console.error("Error fetching user data from AsyncStorage:", error);
@@ -240,6 +291,15 @@ console.log(region);
         fetchUserData();
         requestLocationPermission();
     }, []);
+
+    // useEffect(() => {
+    //     const verifyDoc = userData?.verify;
+    //     if(verifyDoc === "false"){
+    //         toggleDocument(true);
+    //     } else {
+    //         toggleDocument(false)
+    //     }
+    // },[userData])
 
     if (!region) {
         return null;
@@ -275,84 +335,86 @@ console.log(region);
     ];
 
     return (
-        <View style={{ flex: 1 }}>
-
-            <MapView
-                ref={mapRef}
-                customMapStyle={customMapStyle}
-                style={{ width: "100%", height: "100%" }}
-                initialRegion={region}
-                showsUserLocation={true}
-                followsUserLocation={true}
-            >
-            </MapView>
-
-
-            <View
-                style={{
-                    position: "absolute",
-                    flexDirection: "row",
-                    width: "100%",
-                    justifyContent: "space-around",
-                    alignItems: "center",
-                    marginTop: "10%",
-                    height: "10%",
-                }}
-            >
+        <View style={{ flex: 1, backgroundColor: COLORS.primary }}>
+            <View style={{ flex: 1 }}>
                 <View
                     style={{
-                        width: "30%",
-                        backgroundColor: "white",
-                        borderRadius: 10,
-                        height: "50%",
-                        justifyContent: "center",
-                        alignItems: "center",
                         flexDirection: "row",
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: isEnabled ? "green" : "red",
-                            fontSize: 16,
-                            fontWeight: "600",
-                        }}
-                    >
-                        {isEnabled ? "Online" : "Offline"}
-                    </Text>
-                    <Switch
-                        trackColor={{ false: "#767577", true: "#ABBA7C" }}
-                        thumbColor={isEnabled ? "#3D5300" : "#f4f3f4"}
-                        ios_backgroundColor="#3e3e3e"
-                        onValueChange={toggleSwitch}
-                        value={isEnabled}
-                    />
-                </View>
-
-                <View
-                    style={{
-                        width: "60%",
-                        backgroundColor: "white",
-                        borderRadius: 10,
-                        height: "50%",
-                        justifyContent: "center",
+                        width: "100%",
+                        justifyContent: "space-around",
                         alignItems: "center",
+                        height: "100%",
                     }}
                 >
-                    <Text
+                    <View
                         style={{
-                            color: "black",
-                            fontSize: 16,
-                            fontWeight: "600",
-                            textAlign: "center",
+                            width: "30%",
+                            backgroundColor: "white",
+                            borderRadius: 10,
+                            height: "50%",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            flexDirection: "row",
                         }}
                     >
-                        RTR Partner
-                    </Text>
+                        <Text
+                            style={{
+                                color: isEnabled ? "green" : "red",
+                                fontSize: 16,
+                                fontWeight: "600",
+                            }}
+                        >
+                            {isEnabled ? "Online" : "Offline"}
+                        </Text>
+                        <Switch
+                            trackColor={{ false: "#767577", true: "#ABBA7C" }}
+                            thumbColor={isEnabled ? "#3D5300" : "#f4f3f4"}
+                            ios_backgroundColor="#3e3e3e"
+                            onValueChange={() => toggleSwitch(token)}
+                            value={isEnabled}
+                        />
+                    </View>
+
+                    <View
+                        style={{
+                            width: "60%",
+                            backgroundColor: "white",
+                            borderRadius: 10,
+                            height: "50%",
+                            justifyContent: "center",
+                            alignItems: "center",
+                        }}
+                    >
+                        <Text
+                            style={{
+                                color: "black",
+                                fontSize: 16,
+                                fontWeight: "600",
+                                textAlign: "center",
+                            }}
+                        >
+                            RTR Partner
+                        </Text>
+                    </View>
                 </View>
             </View>
 
+            <View className="" style={{ flex: 9 }}>
+                <MapView
+                    ref={mapRef}
+                    customMapStyle={customMapStyle}
+                    style={{ width: "100%", height: "100%" }}
+                    initialRegion={region}
+                    showsUserLocation={true}
+                    followsUserLocation={true}
+                >
+                </MapView>
+            </View>
+
+
+
             <Modal
-                visible={!uploadModal}
+                visible={uploadModal}
                 transparent
                 animationType="fade"
                 onRequestClose={() => toggleDocument(false)}
@@ -383,7 +445,7 @@ console.log(region);
                             </View>
 
                             <View className="mt-10 w-full justify-center items-center">
-                                <TouchableOpacity onPress={handleCheckAadhaar} className="w-[150px] h-[40px] bg-[#9400FF] justify-center items-center rounded-[10px]">
+                                <TouchableOpacity onPress={handleCheckAadhaar} style={{ backgroundColor: COLORS.primary }} className="w-[150px] h-[40px] justify-center items-center rounded-[10px]">
                                     <Text className="text-white text-[18px] font-bold">Validate</Text>
                                 </TouchableOpacity>
                             </View>
@@ -392,49 +454,12 @@ console.log(region);
                 </View>
             </Modal>
 
-            <Modal
-                visible={!showPaymentModal}
-                transparent
-                animationType="fade"
-                onRequestClose={togglePayment}
-            >
-                <View className="flex-1 justify-center items-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-                    <View className="bg-[#f2f2f2] h-[80%] w-[90%] rounded-3xl p-3">
-                        <View className="mt-3 w-full">
-                            <Text className="text-center text-black text-[16px] font-bold">Payment Process</Text>
-                        </View>
-
-                        <View className="mt-3">
-                            <Text className="text-blue-600 text-[14px] text-center font-bold">Your payment is successfully completed then only you can get the ride</Text>
-                        </View>
-
-                        <View className="mt-10">
-                            <Text className="text-black text-[14px] text-center font-bold">There are two types of payment is available</Text>
-                        </View>
-
-                        <View className="mt-3">
-                            <Text className="text-black text-[12px] font-bold">{"⦿  ₹1000 option: no wallet balance included"}</Text>
-                            <Text className="text-black text-[12px] font-bold">{"⦿  ₹1500 option: wallet ₹500 included (meaning the user gets ₹500 wallet balance if they pay ₹1500)"}</Text>
-                        </View>
-
-                        <View className="mt-10">
-                            <Text className="text-black text-[14px] text-center font-bold">Choose Your Payment Option</Text>
-                        </View>
-
-                        <View className="mt-5 flex-row w-full justify-around">
-                            <TouchableOpacity className="w-[46%] h-[100px] bg-[#9400FF] justify-center items-center rounded-[10px]">
-                                <Text className="text-white text-[18px] text-center font-bold">Pay</Text>
-                                <Text className="text-white text-[18px] text-center font-bold">₹1000</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity className="w-[46%] h-[100px] bg-[#9400FF] justify-center items-center rounded-[10px]">
-                                <Text className="text-white text-[18px] text-center font-bold">Pay</Text>
-                                <Text className="text-white text-[18px] text-center font-bold">₹1500</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+            {showPaymentModal ? (
+                <PackagePurchase
+                    visible={showPaymentModal}
+                    onClose={() => setShowPaymentModal(false)}
+                />
+            ) : null}
         </View >
     );
 };
