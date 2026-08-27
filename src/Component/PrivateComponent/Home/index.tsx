@@ -140,7 +140,6 @@ const Home = () => {
             const { data: { success = false, data = {}, message = "" } } = res
             
             if(success === true){
-                console.log(data);
                 const myDatas = data === null ? {} : data
                 if (Object.keys(myDatas).length > 0) {
                     dispatch(toggleStatus());
@@ -159,8 +158,7 @@ const Home = () => {
     };
 
     const toggleDocument = (status: any) => {
-        console.log("dsd", status);
-        
+
         setUploadModal(status);        
     }
 
@@ -402,7 +400,7 @@ const Home = () => {
             <View className="" style={{ flex: 9 }}>
                 <MapView
                     ref={mapRef}
-                    customMapStyle={customMapStyle}
+                    // customMapStyle={customMapStyle}
                     style={{ width: "100%", height: "100%" }}
                     initialRegion={region}
                     showsUserLocation={true}

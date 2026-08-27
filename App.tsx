@@ -33,6 +33,7 @@ const App = () => {
         style={{
           borderLeftColor: 'green',
           backgroundColor: '#E8F5E9',
+          zIndex: 9999
         }}
         text1Style={{
           color: 'green',

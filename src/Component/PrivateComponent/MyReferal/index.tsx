@@ -34,8 +34,6 @@ const MyReferal = () => {
         Clipboard.setString(userData?.referral_code);
     };
 
-console.log(referalHistory);
-
     const fetchReferalHistory = async (token: any) => {
         setLoading(true);
 

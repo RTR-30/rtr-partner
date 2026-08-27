@@ -77,12 +77,9 @@ const Statistics = () => {
             endDate: selectFilter ? value.endDate : statisticsData?.endDate,
         }
 
-        console.log(payload);
-        
         try {
             const res = await StatisticService(tokens, payload)
             const { data: { success = false, data = {} } } = res
-            console.log(data);
             
             if (success === true) {
                 setData(data)

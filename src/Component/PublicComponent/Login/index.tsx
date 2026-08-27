@@ -50,8 +50,8 @@ const Login = () => {
         setShowLoader(true);
 
         const data: any = {
-            "email": email,
-            "password": password
+            email: email,
+            password: password
         }
         
         try {

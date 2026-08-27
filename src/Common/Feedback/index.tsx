@@ -43,7 +43,6 @@ const Feedback = ({ visible, onClose, bookingdata, tokens }: Props) => {
         try {
             const res = await submitFeedbackService(payload, tokens);
             const { data: { success = false, message = "", data = {} } } = res;
-            console.log(res?.data);
 
             if (success === true) {
                 showSuccess(message);

@@ -1,5 +1,6 @@
-export const BaseUrl = "http://10.224.117.206:8000/"
+export const BaseUrl = "http://10.97.57.206:8000/"
 // export const BaseUrl = "http://readytoride.in/";
+export const secretKeyData= "RTRPartner_30012001"
 export const Google_map = "AIzaSyCATOPiFqH1MavVSTy_TKSZ3hfK8II3Www";
 
 export const AppID = "46dfcca1-f6d9-45b6-9217-4897e505ab4a";
@@ -19,6 +20,10 @@ export const Auth = {
     verifyotpapi : "partner-verifyEmail",
     updateUser: "partner-updateUser"
 };
+
+export const UserDetailsApi = {
+    me: 'me'
+}
 
 export const forget = {
     verifyEmail : "forget-password",
@@ -45,13 +50,16 @@ export const ridersForm = {
 }
 
 export const wallet = {
-    transactions_history : "/user-transactions" 
+    transactions_history : "/user-transactions"
 }
 
 export const paymentApis = {
     cashCollect: '/cash/collect',
     cashFree: '/cashfree/create-order',
     verify: '/cashfree/verify',
+    topUp: '/driver-settle',
+    topUpVerify: '/verify-driver-settlement',
+    bankDetails: 'bank-details'
 }
 
 export const referalApi = {
