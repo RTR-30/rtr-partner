@@ -40,6 +40,18 @@ const PaymentRender = ({ item, setLoader, token, setPaymentData }: any) => {
         }
     }
 
+    let descriptionList: string[] = [];
+
+    try {
+        if (Array.isArray(item?.description)) {
+            descriptionList = item.description;
+        } else if (typeof item?.description === "string") {
+            descriptionList = JSON.parse(item.description);
+        }
+    } catch (error) {
+        showError("Description parse error:", error);
+    }
+
     return (
         <View className="w-full p-2 border-[1px] border-black rounded-lg">
             <View className="w-full justify-center flex-row p-2 border-b-[0.5px] border-black">
@@ -52,8 +64,12 @@ const PaymentRender = ({ item, setLoader, token, setPaymentData }: any) => {
             </View>
 
             <View className="w-full p-2">
-                <Text className="font-bold text-[14px]" style={{ color: COLORS.primary }}>Details : </Text>
-                <Text className="font-bold text-[14px] text-black">{item?.description}</Text>
+                {descriptionList.map((description, index) => (
+                    <View key={index} className="flex-row items-center mb-1" > 
+                        <Text className="text-black font-bold text-[14px]"> •{" "} </Text> 
+                        <Text className="text-black text-[14px] flex-1"> {description.trim()} </Text> 
+                    </View>
+                ))}
             </View>
 
             <View className="mt-2 w-full p-1 justify-center items-center">

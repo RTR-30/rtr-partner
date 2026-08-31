@@ -17,7 +17,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { UpdateBooking } from "./helper";
 import { showError, showSuccess } from "../../../Common/ToastMessage";
 
-const RenderList = ({ item, setShowLoader, token }: any) => {
+const RenderList = ({ item, setShowLoader }: any) => {
     const navigation: any = useNavigation();
     const [userData, setUserData] = useState<any>(null);
 
@@ -28,7 +28,7 @@ const RenderList = ({ item, setShowLoader, token }: any) => {
         }
 
         try {
-            const res = await UpdateBooking(token, data)
+            const res = await UpdateBooking(data)
             showSuccess(res?.data.message);
             navigation.navigate("MyDuty");
         } catch (error:any) {

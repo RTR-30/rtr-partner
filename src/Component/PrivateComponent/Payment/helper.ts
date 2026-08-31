@@ -1,5 +1,4 @@
-import axios from "axios";
-import { BaseUrl, PartnerUser, paymentApis, paymentBase, UserDetailsApi, wallet } from "../../../../environment/ApiManager";
+import { BaseUrl, PartnerUser, paymentApis, paymentBase, UserDetailsApi, wallet } from "../../../../environment/ApiManager"
 import { Get, Post, Put } from "../../../Common/HttpService";
 
 export const UserDetailsService = () => {
@@ -20,4 +19,16 @@ export const TopUpVerifyService = (payload: any) => {
 
 export const UpdateBankDetailsService = (payload: any) => {
     return Put(`${BaseUrl}${PartnerUser}${paymentApis?.bankDetails}`, payload, 'rtrToken');
+}
+
+export const WithdrawRequestService = (payload: any) => {
+    return Post(`${BaseUrl}${paymentBase}${paymentApis?.withdrawRequest}`, payload, 'rtrToken')
+}
+
+export const RequestListService = () => {
+    return Get(`${BaseUrl}${paymentBase}${paymentApis?.RequestList}`, 'rtrToken');
+}
+
+export const CancelRequestService = (payload: any) => {
+    return Post(`${BaseUrl}${paymentBase}${paymentApis?.cancelRequest}`, payload, 'rtrToken');
 }

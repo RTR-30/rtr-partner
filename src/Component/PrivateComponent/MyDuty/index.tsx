@@ -19,7 +19,7 @@ const NoData = require("../../../../assets/Imgs/NoDatas.png");
 const MyDuty = () => {
     const value = "My Duty";
     const [loading, setLoading] = useState<boolean>(false);
-    const [token, setToken] = useState<any>(null);
+
     const [data, setData] = useState<any[]>([]);
 
     const [payDetails, setPayDetails] = useState<any>({
@@ -29,10 +29,10 @@ const MyDuty = () => {
         active: false
     })
 
-    const fetchAcceptList = async (tokens?: any) => {
+    const fetchAcceptList = async () => {
         setLoading(true);
         try {
-            const res = await AcceptList(tokens);
+            const res = await AcceptList();
             const { data: { bookings = [], message = '', success = false } } = res
             
             if (success === true) {
@@ -45,21 +45,9 @@ const MyDuty = () => {
         }
     }
 
-    const fetchUserData = async () => {
-        try {
-            const tokens: any = await AsyncStorage.getItem("token");
-            if (tokens) {
-                fetchAcceptList(tokens);
-                await setToken(tokens);
-            }
-        } catch (error) {
-            showError(error);
-        }
-    };
-
     useFocusEffect(
         React.useCallback(() => {
-            fetchUserData();
+            fetchAcceptList();
         }, [])
     );
 
@@ -81,8 +69,7 @@ const MyDuty = () => {
                         data={data}
                         renderItem={({ item }: any) => 
                             <RenderHelper 
-                                item={item} 
-                                token={token} 
+                                item={item}
                                 setLoading={setLoading} 
                                 fetchAcceptList={fetchAcceptList}
                                 payDetails={payDetails}

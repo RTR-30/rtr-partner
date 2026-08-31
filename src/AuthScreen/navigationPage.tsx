@@ -16,6 +16,7 @@ import Statistics from "../Component/PrivateComponent/Statistics/index";
 import ForgetPassword from "../Component/PublicComponent/Login/forgetPassword";
 import MyReferal from "../Component/PrivateComponent/MyReferal";
 import Profile from "../Component/PrivateComponent/Profile";
+import RequestList from "../Component/PrivateComponent/Payment/RequestList";
 
 import TripDetails from "../Component/PrivateComponent/Duty/TripDetails";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -86,6 +87,7 @@ const NavigationPage = () => {
                 <Stack.Screen name="ForgetPassword" component={ForgetPassword} />
                 <Stack.Screen name="MyReferal" component={MyReferal}/>
                 <Stack.Screen name="Profile" component={Profile}/>
+                <Stack.Screen name="RequestList" component={RequestList}/>
             </Stack.Navigator>
         </NavigationContainer>
     )

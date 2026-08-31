@@ -1,21 +1,9 @@
-import Toast from "react-native-toast-message";
+import Toast from "react-native-simple-toast";
 
 export const showSuccess = (msg: any) => {
-  Toast.show({
-    type: "success",
-    text1: "Success",
-    text2: msg?.toString() || "",
-    position: "top",
-    visibilityTime: 2500,
-  });
+  Toast.show(String(msg), Toast.SHORT);
 };
 
 export const showError = (msg: any) => {
-  Toast.show({
-    type: "error",
-    text1: "Error",
-    text2: msg?.toString() || "",
-    position: "top",
-    visibilityTime: 2500,
-  });
+  Toast.show(String(msg), Toast.LONG);
 };

@@ -61,11 +61,12 @@ const DutyScreen = () => {
         }
     }
 
-    const fetchGearType = async (token: any) => {
+    const fetchGearType = async () => {
         setShowLoader(true);
         try {
-            const res = await gearTypeService(token);
+            const res = await gearTypeService();
             const { data: { success = false, data = [], message = "" } } = res
+            
             if (success === true) {
                 setGearType(["All", ...data]);
             } else {
@@ -111,7 +112,7 @@ const DutyScreen = () => {
                 const regi = JSON.parse(region);
                 setToken(tokens);
                 setlatLong(regi)
-                await fetchGearType(tokens)
+                await fetchGearType()
                 await fetchData(tokens, currentPageLimit, 1, regi);
             }
         } catch (error) {
@@ -140,6 +141,7 @@ const DutyScreen = () => {
     useFocusEffect(
         React.useCallback(() => {
             fetchUserData();
+            fetchGearType()
         }, [])
     );
 
@@ -206,7 +208,7 @@ const DutyScreen = () => {
                                     </View>
                                     <FlatList
                                         data={dutyData}
-                                        renderItem={({ item }: any) => <RenderList item={item} setShowLoader={setShowLoader} token={token} />}
+                                        renderItem={({ item }: any) => <RenderList item={item} setShowLoader={setShowLoader} />}
                                         keyExtractor={(item, index) => index.toString()}
                                         refreshControl={<RefreshControl refreshing={onRefreshing} onRefresh={onRefresh} tintColor={"#6200EE"} />}
                                         showsVerticalScrollIndicator={false}

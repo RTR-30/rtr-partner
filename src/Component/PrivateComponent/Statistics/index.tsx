@@ -20,7 +20,6 @@ const Statistics = () => {
     const backNavigate = true;
 
     const [loading, setLoading] = useState<boolean>(false);
-    const [token, setToken] = useState<any>(null);
     const [data, setData] = useState<any>({});
 
     const [startDate, setStartDate] = useState<any>();
@@ -40,7 +39,7 @@ const Statistics = () => {
         endDate: ''
     })
 
-    const chooseFilter = async (selectFilter: any, values?: any, tokens?: any) => {
+    const chooseFilter = async (selectFilter: any, values?: any) => {
         if (selectFilter) {
             
             if (!statisticsData?.startDate || !statisticsData?.endDate) {
@@ -55,7 +54,7 @@ const Statistics = () => {
                 ...statisticsData,
                 filter: defaultValue,
             })
-            fetchData(token, value, selectFilter)
+            fetchData(value, selectFilter)
             
         } else {
             
@@ -64,7 +63,7 @@ const Statistics = () => {
                 filter: values,
             })
             
-            fetchData(tokens, values, selectFilter)
+            fetchData(values, selectFilter)
         }
     }
     
@@ -78,7 +77,7 @@ const Statistics = () => {
         }
 
         try {
-            const res = await StatisticService(tokens, payload)
+            const res = await StatisticService(payload)
             const { data: { success = false, data = {} } } = res
             
             if (success === true) {
@@ -104,8 +103,7 @@ const Statistics = () => {
         try {
             const tokens: any = await AsyncStorage.getItem("token");
             if (tokens) {
-                await setToken(tokens);
-                chooseFilter(false, statisticsData?.filter, tokens)
+                chooseFilter(false, statisticsData?.filter)
             }
         } catch (error) {
             showError(error);
@@ -190,7 +188,7 @@ const Statistics = () => {
                                 key={index}
                                 onPress={() =>
 
-                                    chooseFilter(false, item.value, token)
+                                    chooseFilter(false, item.value)
                                 }
                                 className={`mr-3 px-4 py-2 rounded-xl justify-center items-center w-28`}
                                 style={{ backgroundColor: statisticsData.filter === item.value ? COLORS.primary : 'lightgray' }}

@@ -3,15 +3,15 @@ import { View, Text, Platform, PermissionsAndroid, Alert, Switch, Image, Modal, 
 
 import MapView, { Marker, Polyline } from "react-native-maps";
 import Geolocation from "@react-native-community/geolocation";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleStatus } from "../../../redux/reduxReducer";
 import { validateAadhaar } from "../../../Common/AadhaarCardValid/aadharCardValid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GetMyPackageService, PaymentProcessService, verifyDetailsServices } from "./helper";
+import { GetMyPackageService, getUserDetailsService, PaymentProcessService, verifyDetailsServices } from "./helper";
 import MapViewDirections from "react-native-maps-directions";
 import { Google_map } from "../../../../environment/ApiManager";
-import { showError } from "../../../Common/ToastMessage";
+import { showError, showSuccess } from "../../../Common/ToastMessage";
 import { COLORS } from "../../../utils/ColorCode";
 import PaymentRender from "./PaymentRender";
 import PackagePurchase from "../../../Common/PackagePurchase";
@@ -20,11 +20,8 @@ const Home = () => {
     const navigation: any = useNavigation();
 
     const [loader, setLoader] = useState<boolean>(false);
-    const [token, setToken] = useState<any>(null);
-    const [packages, setPackages] = useState<any[]>([]);
     const [showPaymentModal, setShowPaymentModal] = useState<any>(false);
     const [uploadModal, setUploadModal] = useState<any>(false);
-    const [userData, setUserData] = useState<any>(null);
 
     const [aadhaar, setAadhaar] = useState('');
     const [aadharError, setAadharError] = useState('');
@@ -91,28 +88,9 @@ const Home = () => {
 
     const handleSubmit = () => {
         if (validateForm()) {
-            Alert.alert('License Info', JSON.stringify(form, null, 2));
+            fetchdetails()
         }
     };
-
-    const PaymentProcess = async (tokens: any) => {
-
-        setLoader(true)
-        try {
-            const res = await PaymentProcessService(tokens);
-            const { data: { data = [], success = false } } = res
-            if (success === true) {
-                setPackages(data)
-            } else {
-                showError(false)
-            }
-
-        } catch (error) {
-            showError(error)
-        } finally {
-            setLoader(false)
-        }
-    }
 
     const renderInput = (label: any, key: any, placeholder: any) => {
         return (
@@ -129,17 +107,17 @@ const Home = () => {
         );
     }
 
-    
-    const toggleSwitch = async (tokens: any) => {
+
+    const toggleSwitch = async () => {
         setLoader(true)
-        if(isEnabled) {
+        if (isEnabled) {
             return dispatch(toggleStatus());
         }
-        try{
-            const res = await GetMyPackageService(tokens);
+        try {
+            const res = await GetMyPackageService();
             const { data: { success = false, data = {}, message = "" } } = res
-            
-            if(success === true){
+
+            if (success === true) {
                 const myDatas = data === null ? {} : data
                 if (Object.keys(myDatas).length > 0) {
                     dispatch(toggleStatus());
@@ -150,16 +128,16 @@ const Home = () => {
             } else {
                 showError(message)
             }
-        } catch(error){
+        } catch (error) {
             showError(error)
-        } finally{
+        } finally {
             setLoader(false)
         }
     };
 
     const toggleDocument = (status: any) => {
 
-        setUploadModal(status);        
+        setUploadModal(status);
     }
 
     const togglePayment = () => {
@@ -168,7 +146,8 @@ const Home = () => {
 
     const handleCheckAadhaar = () => {
         if (validateAadhaar(aadhaar)) {
-            Alert.alert("✅ Aadhaar is valid");
+            showSuccess("✅ Aadhaar is valid");
+            handleSubmit()
             setAadharError('');
         } else {
             setAadharError("Invalid Aadhaar number");
@@ -245,7 +224,7 @@ const Home = () => {
         }
     };
 
-    const fetchdetails = async (tokens: any) => {
+    const fetchdetails = async () => {
         setLoader(true);
         const data = {
             aadhaar: aadhaar,
@@ -255,9 +234,13 @@ const Home = () => {
             expirydate: form.expiryDate
         }
         try {
-            const verifi = await verifyDetailsServices(tokens, data)
-
-            setUploadModal(true);
+            const res = await verifyDetailsServices(data)
+            const { data: { success = false, message = "" } } = res;
+            if (success) {
+                showSuccess(message)
+            } else {
+                showError(message)
+            }
         } catch (error) {
             showError(error);
         } finally {
@@ -265,39 +248,42 @@ const Home = () => {
         }
     }
 
-
-    const fetchUserData = async () => {
+    const fetchUserDetails = async () => {
+        setLoader(true)
         try {
-            const storedUserData: any = await AsyncStorage.getItem("UserData");
-            const usertoken: any = await AsyncStorage.getItem("token");
+            const res = await getUserDetailsService();
+            const { data: { success = false, user = {} } } = res
 
-            if (storedUserData || usertoken) {
-                const userDatas = JSON.parse(storedUserData)
-                const userTokens = usertoken
-                const verifyDoc = userDatas?.verify;
+            if (success === true) {
+                const verifyDoc = user?.verify;
                 
-                setToken(userTokens)
-                PaymentProcess(usertoken)
-                setUserData(userDatas)
+                if (verifyDoc === "false") {
+                    toggleDocument(true);
+                } else {
+                    toggleDocument(false)
+                }
+            } else {
+                showError("user details error")
             }
         } catch (error) {
-            console.error("Error fetching user data from AsyncStorage:", error);
+            showError(error)
+        } finally {
+            setLoader(false)
         }
-    };
-
-    useEffect(() => {
-        fetchUserData();
-        requestLocationPermission();
-    }, []);
+    }
 
     // useEffect(() => {
-    //     const verifyDoc = userData?.verify;
-    //     if(verifyDoc === "false"){
-    //         toggleDocument(true);
-    //     } else {
-    //         toggleDocument(false)
-    //     }
-    // },[userData])
+    //     fetchUserData();
+    //     fetchUserDetails();
+    //     requestLocationPermission();
+    // }, []);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchUserDetails();
+            requestLocationPermission();
+        }, [])
+    );
 
     if (!region) {
         return null;
@@ -368,7 +354,7 @@ const Home = () => {
                             trackColor={{ false: "#767577", true: "#ABBA7C" }}
                             thumbColor={isEnabled ? "#3D5300" : "#f4f3f4"}
                             ios_backgroundColor="#3e3e3e"
-                            onValueChange={() => toggleSwitch(token)}
+                            onValueChange={() => toggleSwitch()}
                             value={isEnabled}
                         />
                     </View>

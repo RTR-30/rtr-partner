@@ -1,19 +1,12 @@
 import axios from "axios"
 import { BaseUrl, FeedBackBase, FeedbackApis } from "../../../environment/ApiManager";
+import { Get, Post } from "../HttpService";
 
 
-export const FeedbackTagService = (token: any) => {
-    return axios.get(`${BaseUrl}${FeedBackBase}${FeedbackApis?.Tags}`, {
-        headers: {
-            "Authorization": `Bearer ${token}`,
-        }
-    })
+export const FeedbackTagService = () => {
+    return Get(`${BaseUrl}${FeedBackBase}${FeedbackApis?.Tags}`, 'rtrToken')
 }
 
-export const submitFeedbackService = (payload: any, token: any) => {
-    return axios.post(`${BaseUrl}${FeedBackBase}${FeedbackApis?.Submit}`, payload, {
-        headers: {
-            "Authorization": `Bearer ${token}`,
-        }
-    })
+export const submitFeedbackService = (payload: any) => {
+    return Post(`${BaseUrl}${FeedBackBase}${FeedbackApis?.Submit}`, payload, "rtrToken")
 }

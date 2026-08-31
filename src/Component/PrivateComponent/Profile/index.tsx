@@ -20,7 +20,6 @@ const NoImg = require("../../../../assets/Imgs/EtyImg.png");
 const Profile = () => {
     const value = "My Profile"
     const [loading, setLoading] = useState<boolean>(false);
-    const [token, setToken] = useState<any>(null);
     const [profile, setProfile] = useState<any>({
         name: '',
         email: '',
@@ -42,7 +41,7 @@ const Profile = () => {
         }
 
         try {
-            const res = await updateUserService(payload, token)
+            const res = await updateUserService(payload)
             const { data: { status = 0, message = "", user = {} } } = res
 
             if(status === 200){
@@ -81,7 +80,6 @@ const Profile = () => {
                 address: parseData?.address,
                 img: parseData?.profilepic
             });
-            setToken(token)
         }
     }
 

@@ -19,7 +19,7 @@ import { showError, showSuccess } from "../../../Common/ToastMessage";
 import { COLORS } from "../../../utils/ColorCode";
 import Feedback from "../../../Common/Feedback";
 
-const RenderHelper = ({ item, token, setLoading, fetchAcceptList, payDetails, setPayDetails }: any) => {
+const RenderHelper = ({ item, setLoading, fetchAcceptList, payDetails, setPayDetails }: any) => {
 
     const [region, setRegion] = useState<any>(null);
     const [startRide, setStartRide] = useState<boolean>(false);
@@ -38,7 +38,7 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList, payDetails, se
     }
 
     const closeFeedbackModal = () => {
-        fetchAcceptList(token)
+        fetchAcceptList()
         setShowFeedback(false);
     }
     
@@ -119,7 +119,7 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList, payDetails, se
         }
 
         try {
-            const res: any = await CancelRideService(token, datas);
+            const res: any = await CancelRideService(datas);
             if (res?.data?.success === true) {
                 navigation.navigate("Duty");
             }
@@ -175,11 +175,11 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList, payDetails, se
             "OTP": otp
         }
         try {
-            const res = await StartRideService(token, payload);
+            const res = await StartRideService(payload);
 
             if (res?.data?.success === true) {
                 setStartRide(false);
-                fetchAcceptList(token)
+                fetchAcceptList()
             }
 
         } catch (error) {
@@ -196,7 +196,7 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList, payDetails, se
             bookingId: item?.Id
         }
         try {
-            const res = await onlinePaymentService(token, payload)
+            const res = await onlinePaymentService(payload)
             const { data: { success = false, message = '', payment_link = '', qr_code = '', link_id = '' } } = res
 
             if (success === true) {
@@ -218,13 +218,13 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList, payDetails, se
         }
     }
 
-    const verifyPayment = async (linkId: any, token: any) => {
+    const verifyPayment = async (linkId: any) => {
         setLoading(true);
         const payload = {
             linkId: linkId
         }
         try {
-            const res = await verifyPaymentService(token, payload);
+            const res = await verifyPaymentService(payload);
             const { data: { success = false, message = '', status = '' } } = res;
             if (success === true) {
                 if (status === "PENDING") {
@@ -254,7 +254,7 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList, payDetails, se
         }
 
         try {
-            const res = await CashCollectService(token, payload)
+            const res = await CashCollectService(payload)
             const { data: { success = false, message = '' }, status = 0 } = res
             if (status === 200) {
                 showSuccess(message);
@@ -285,8 +285,8 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList, payDetails, se
             "bookingId": data.Id
         }
         try {
-            const res = await EndRideService(token, payload)
-            fetchAcceptList(token)
+            const res = await EndRideService(payload)
+            fetchAcceptList()
         } catch (error) {
             showError(error);
         } finally {
@@ -522,7 +522,7 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList, payDetails, se
                                     </View>
 
                                     <View className="mt-4 w-[70%] p-2">
-                                        <TouchableOpacity onPress={() => verifyPayment(payDetails?.link_id, token)} className="p-2 rounded-lg justify-center items-center" style={{ backgroundColor: COLORS.primary }}>
+                                        <TouchableOpacity onPress={() => verifyPayment(payDetails?.link_id)} className="p-2 rounded-lg justify-center items-center" style={{ backgroundColor: COLORS.primary }}>
                                             <Text className="text-center text-[14px] text-white font-bold">Verify Payment</Text>
                                         </TouchableOpacity>
                                     </View>
@@ -553,7 +553,6 @@ const RenderHelper = ({ item, token, setLoading, fetchAcceptList, payDetails, se
                     visible={showFeedback} 
                     onClose={() => closeFeedbackModal()} 
                     bookingdata={selectedBookingId}
-                    tokens={token}
                 /> : null
             }
         </View>

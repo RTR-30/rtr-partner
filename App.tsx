@@ -6,7 +6,6 @@ import messaging from "@react-native-firebase/messaging";
 import { OneSignal, LogLevel } from 'react-native-onesignal';
 import { AppID } from "./environment/ApiManager";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
 import { COLORS } from './src/utils/ColorCode';
 import { AppState } from "react-native";
 import { setStatus } from "./src/redux/reduxReducer";
@@ -23,50 +22,6 @@ const App = () => {
       await AsyncStorage.setItem('ONESIGNAL_PLAYER_ID', userId);
     }
   };
-
-
-
-  const toastConfig = {
-    success: (props: any) => (
-      <BaseToast
-        {...props}
-        style={{
-          borderLeftColor: 'green',
-          backgroundColor: '#E8F5E9',
-          zIndex: 9999
-        }}
-        text1Style={{
-          color: 'green',
-          fontSize: 16,
-          fontWeight: 'bold',
-        }}
-        text2Style={{
-          color: '#333',
-          fontSize: 14,
-        }}
-      />
-    ),
-
-    error: (props: any) => (
-      <ErrorToast
-        {...props}
-        style={{
-          borderLeftColor: 'red',
-          backgroundColor: '#FFEBEE',
-        }}
-        text1Style={{
-          color: 'red',
-          fontSize: 16,
-          fontWeight: 'bold',
-        }}
-        text2Style={{
-          color: '#333',
-          fontSize: 14,
-        }}
-      />
-    ),
-  };
-
 
   useEffect(() => {
     const subscription = AppState.addEventListener(
@@ -91,7 +46,6 @@ const App = () => {
   return (
     <Provider store={store}>
       <NavigationPage />
-      <Toast config={toastConfig} />
     </Provider>
   )
 }

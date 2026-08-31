@@ -14,16 +14,12 @@ export const Get = async (url: string, attachToken = "NoToken"): Promise<any> =>
         headers = { ...(await rtrToken()), };
     }
     try {
-        console.log(url);
-        
         const res: any = await axios.get(url, {
             headers: headers,
         })  
-        console.log("dcd",res);
         
         return res
     } catch (error) {
-        console.log("GET ERROR:", error);
         showError(error)
     }
 }

@@ -1,10 +1,6 @@
-import axios from "axios";
 import { BaseUrl, referalApi } from "../../../../environment/ApiManager";
+import { Get } from "../../../Common/HttpService";
 
-export const referalHistoryService = async (token: any) => {
-    return axios.get(`${BaseUrl}${referalApi.referal_history}`,{
-        headers:{
-            Authorization: `Bearer ${token}`,
-        }
-    })
+export const referalHistoryService = async () => {
+    return Get(`${BaseUrl}${referalApi.referal_history}`, "rtrToken")
 }

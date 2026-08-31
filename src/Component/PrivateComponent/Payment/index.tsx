@@ -13,16 +13,17 @@ import {
 } from "react-native";
 import Header from "../../../Common/Header";
 import { paymentCard } from "../../../Common/images";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { TopUpService, TopUpVerifyService, UserDetailsService, walletService } from "./helper";
+import { TopUpService, TopUpVerifyService, UpdateBankDetailsService, UserDetailsService, walletService, WithdrawRequestService } from "./helper";
 import RenderPayment from "./renderPayment";
 import { COLORS } from "../../../utils/ColorCode";
-import { showError } from "../../../Common/ToastMessage";
+import { showError, showSuccess } from "../../../Common/ToastMessage";
 import Loader from "../../../Common/Loader";
 
 const PaymentScreen = () => {
-    const value = "My Wallet"
+    const value = "My Wallet";
+    const navigation: any = useNavigation();
     const [loading, setLoading] = useState<boolean>(false);
     const [userData, setUserData] = useState<any>({});
     const [walletData, setWalletData] = useState<any>([]);
@@ -32,14 +33,17 @@ const PaymentScreen = () => {
     });
     const [linkIds, setLinkIds] = useState<any>(null)
     const [withdraw, setWithdraw] = useState<any>({
-        amount: '',
-        accountNumber: userData?.bank_account_number,
-        ifsc: userData?.bank_ifsc,
-        accountName: userData?.bank_account_name
+        amount: 0,
+        accountNumber: "",
+        ifsc: "",
+        accountName: "",
+        upi: "",
+        branch: ""
     })
 
     const [showTopUp, setShowTopup] = useState<boolean>(false);
     const [showWithdraw, setShowWithdraw] = useState<boolean>(false);
+    const [amountCount, setAmountCount] = useState<any>('');
 
     const [verifyTopUp, setVerifyTopUp] = useState<boolean>(false);
 
@@ -74,12 +78,16 @@ const PaymentScreen = () => {
     const closeWithdraw = () => {
         setShowWithdraw(false);
         setWithdraw({
-            amount: "",
+            amount: 0,
         });
         setErrorMsg({
             topUp: '',
             withdraw: '',
         });
+    }
+
+    const goToRequestList = () => {
+        navigation.navigate("RequestList")
     }
 
     const totalAmount = (walletData ?? [])
@@ -105,6 +113,61 @@ const PaymentScreen = () => {
                 handleWallet();
                 fetchUserDetails();
                 closeTopUp();
+            } else {
+                showError(message)
+            }
+        } catch (error) {
+            showError(error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const updateBankDetails = async () => {
+        if (!withdraw?.accountNumber || !withdraw?.ifsc || !withdraw?.accountName ||
+            !withdraw?.upi || !withdraw?.branch
+        ) {
+            showError("Fill all require details")
+            return
+        }
+
+        setLoading(true)
+        const payload = {
+            bank_account_number: withdraw?.accountNumber,
+            bank_ifsc: withdraw?.ifsc,
+            bank_account_name: withdraw?.accountName,
+            bank_upi: withdraw?.upi,
+            bank_branch: withdraw?.branch
+        }
+
+        try {
+            const res = await UpdateBankDetailsService(payload)
+            const { data: { message = "", success = false } } = res;
+
+            if (success === true) {
+                handleWithdrawRequest();
+            } else {
+                showError(message)
+            }
+        } catch (error) {
+            showError(error);
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleWithdrawRequest = async () => {
+        setLoading(true)
+        const payload = {
+            amount: withdraw?.amount
+        }
+        try {
+            const res = await WithdrawRequestService(payload);
+            const { data: { message = '', success = false } } = res;
+
+            if (success === true) {
+                showSuccess(message)
+                closeWithdraw()
             } else {
                 showError(message)
             }
@@ -182,7 +245,6 @@ const PaymentScreen = () => {
         setLoading(true);
         try {
             const res = await UserDetailsService();
-            console.log(res);
             const { data: { success = false, user = {} } } = res
 
             if (success === true) {
@@ -198,10 +260,25 @@ const PaymentScreen = () => {
         }
     }
 
+    useEffect(() => {
+        if (userData) {
+            console.log("ffef",userData);
+            
+            setWithdraw((prev: any) => ({
+                ...prev,
+                accountNumber: userData?.bank_account_number ?? "",
+                ifsc: userData?.bank_ifsc ?? "",
+                accountName: userData?.bank_account_name ?? "",
+                upi: userData?.bank_upi ?? "",
+                branch: userData?.bank_branch ?? "",
+            }));
+        }
+    }, [userData]);
+
     useFocusEffect(
         React.useCallback(() => {
             fetchUserDetails();
-            // handleWallet();
+            handleWallet();
         }, [])
     );
     return (
@@ -242,7 +319,7 @@ const PaymentScreen = () => {
                     </View>
 
                     <View className="w-[30%] h-12 rounded-lg" style={{ backgroundColor: COLORS?.primary }}>
-                        <TouchableOpacity className="w-full h-full justify-center items-center">
+                        <TouchableOpacity onPress={goToRequestList} className="w-full h-full justify-center items-center">
                             <Text className="text-white text-[18px] font-bold text-center">Request List</Text>
                         </TouchableOpacity>
                     </View>
@@ -400,7 +477,7 @@ const PaymentScreen = () => {
                     <View className="w-full rounded-2xl p-5" style={{ backgroundColor: "#fff", elevation: 5 }}>
                         <Text className="text-black text-[22px] font-bold text-center mb-5">Withdraw Wallet</Text>
 
-                        <Text className="text-black text-[16px] font-medium mb-2">Bank Account Name</Text>
+                        <Text className="text-black text-[16px] font-medium mb-2">Bank Account Name *</Text>
                         <TextInput
                             value={withdraw.accountName}
                             onChangeText={(text) => {
@@ -415,7 +492,7 @@ const PaymentScreen = () => {
                             style={{ borderWidth: 1, borderColor: COLORS.primary }}
                         />
 
-                        <Text className="text-black text-[16px] font-medium mb-2">Bank Account Number</Text>
+                        <Text className="text-black text-[16px] font-medium mb-2">Bank Account Number *</Text>
                         <TextInput
                             value={withdraw.accountNumber}
                             onChangeText={(text) => {
@@ -433,7 +510,7 @@ const PaymentScreen = () => {
                             style={{ borderWidth: 1, borderColor: COLORS.primary }}
                         />
 
-                        <Text className="text-black text-[16px] font-medium mb-2">Bank IFSC</Text>
+                        <Text className="text-black text-[16px] font-medium mb-2">Bank IFSC *</Text>
                         <TextInput
                             value={withdraw.ifsc}
                             onChangeText={(text) => {
@@ -449,30 +526,78 @@ const PaymentScreen = () => {
                             style={{ borderWidth: 1, borderColor: COLORS.primary }}
                         />
 
+                        <Text className="text-black text-[16px] font-medium mb-2">Bank Branch *</Text>
+                        <TextInput
+                            value={withdraw.branch}
+                            onChangeText={(text) => {
+                                setWithdraw({
+                                    ...withdraw,
+                                    branch: text.toUpperCase(),
+                                });
+                            }}
+                            placeholder="Enter Branch"
+                            placeholderTextColor="#999"
+                            autoCapitalize="characters"
+                            className="w-full h-12 text-black text-[16px] px-3 rounded-xl mb-4"
+                            style={{ borderWidth: 1, borderColor: COLORS.primary }}
+                        />
+
+                        <Text className="text-black text-[16px] font-medium mb-2">Gpay number *</Text>
+                        <TextInput
+                            value={withdraw.upi}
+                            onChangeText={(text) => {
+                                setWithdraw({
+                                    ...withdraw,
+                                    upi: text.toUpperCase(),
+                                });
+                            }}
+                            placeholder="Enter Gpay Number"
+                            placeholderTextColor="#999"
+                            autoCapitalize="characters"
+                            keyboardType="numeric"
+                            className="w-full h-12 text-black text-[16px] px-3 rounded-xl mb-4"
+                            style={{ borderWidth: 1, borderColor: COLORS.primary }}
+                        />
+
                         <Text className="text-black text-[16px] font-medium mb-2">Enter Withdraw Amount</Text>
-                        <View className="flex-row items-center rounded-xl px-3" style={{ borderWidth: 1, borderColor: COLORS.primary }}>
-                            <Text className="text-black text-[18px] font-bold mr-2">₹</Text>
+                        <View className="w-full rounded-xl flex-row justify-around items-center">
+                            {/* ₹100 */}
+                            <View className="rounded-xl p-2 w-[25%] justify-center items-center" style={{ borderColor: COLORS.primary, borderWidth: 1 }}>
+                                <Text className="text-[16px] text-black font-bold">₹100</Text>
+                            </View>
 
-                            <TextInput
-                                value={withdraw.amount}
-                                onChangeText={(text) => {
-                                    const numericValue = text.replace(/[^0-9]/g, "");
+                            <Text className="text-[20px] text-black font-bold">X</Text>
 
-                                    setWithdraw({
-                                        ...withdraw,
-                                        amount: numericValue,
-                                    });
+                            {/* Count */}
+                            <View className="rounded-xl w-[25%]" style={{ borderColor: COLORS.primary, borderWidth: 1 }} >
+                                <TextInput
+                                    value={amountCount}
+                                    onChangeText={(text) => {
+                                        const numericValue = text.replace(/[^0-9]/g, "");
+                                        setAmountCount(numericValue);
+                                        const count = Number(numericValue);
+                                        setWithdraw({
+                                            ...withdraw,
+                                            amount: count > 0 ? String(count * 100) : "",
+                                        });
+                                        setErrorMsg({
+                                            ...errorMsg,
+                                            withdraw: "",
+                                        });
+                                    }}
+                                    placeholder="Count"
+                                    placeholderTextColor="#999"
+                                    keyboardType="numeric"
+                                    className="text-black text-[16px] font-bold"
+                                />
+                            </View>
 
-                                    setErrorMsg({
-                                        ...errorMsg,
-                                        withdraw: "",
-                                    });
-                                }}
-                                placeholder="Enter amount"
-                                placeholderTextColor="#999"
-                                keyboardType="numeric"
-                                className="flex-1 text-black text-[18px]"
-                            />
+                            <Text className="text-[20px] text-black font-bold">=</Text>
+
+                            {/* Total */}
+                            <View className="rounded-xl p-2 w-[25%] justify-center items-center" style={{ borderColor: COLORS.primary, borderWidth: 1 }}>
+                                <Text className="text-[16px] text-black font-bold">₹{Number(amountCount || 0) * 100}</Text>
+                            </View>
                         </View>
 
                         {errorMsg.withdraw ? (
@@ -496,7 +621,7 @@ const PaymentScreen = () => {
                                     );
 
                                     // Empty validation
-                                    if (!withdraw?.amount || enteredAmount <= 0) {
+                                    if (!Number(withdraw?.amount) || enteredAmount <= 0) {
                                         setErrorMsg({
                                             ...errorMsg,
                                             withdraw: "Please enter a valid amount",
@@ -531,6 +656,8 @@ const PaymentScreen = () => {
                                         });
                                         return;
                                     }
+
+                                    updateBankDetails()
 
                                 }}
                                 className="w-[45%] h-12 rounded-xl justify-center items-center" style={{ backgroundColor: COLORS.primary }}

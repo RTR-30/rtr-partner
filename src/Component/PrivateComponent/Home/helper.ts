@@ -1,26 +1,19 @@
 import axios from "axios";
-import { BaseUrl, PackageApis, packageBase, paymentApis, paymentBase, verificationDetails, verificationTable } from "../../../../environment/ApiManager";
+import { BaseUrl, PackageApis, packageBase, PartnerUser, paymentApis, paymentBase, UserDetailsApi, verificationDetails, verificationTable } from "../../../../environment/ApiManager";
+import { Get, Post } from "../../../Common/HttpService";
 
-export const verifyDetailsServices = (token: any, data: any) => {
-    return axios.post(`${BaseUrl}${verificationTable}${verificationDetails.verifyDetails}`, data, {
-        headers: {
-            "Authorization": `Bearer ${token}`,
-        }
-    })
+export const verifyDetailsServices = (data: any) => {
+    return Post(`${BaseUrl}${verificationTable}${verificationDetails.verifyDetails}`, data, "rtrToken")
 };
 
-export const PaymentProcessService = (token: any) => {
-    return axios.get(`${BaseUrl}${packageBase}`, {
-        headers: {
-            "Authorization": `Bearer ${token}`,
-        }
-    })
+export const PaymentProcessService = () => {
+    return Get(`${BaseUrl}${packageBase}`, "rtrToken")
 }
 
-export const GetMyPackageService = (token: any) => {
-    return axios.get(`${BaseUrl}${packageBase}${PackageApis.myPackages}`, {
-        headers: {
-            "Authorization": `Bearer ${token}`,
-        }
-    })
+export const GetMyPackageService = () => {
+    return Get(`${BaseUrl}${packageBase}${PackageApis.myPackages}`, "rtrToken")
+}
+
+export const getUserDetailsService = () => {
+    return Get(`${BaseUrl}${PartnerUser}${UserDetailsApi?.me}`, "rtrToken")
 }

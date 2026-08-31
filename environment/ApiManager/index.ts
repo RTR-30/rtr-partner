@@ -1,4 +1,4 @@
-export const BaseUrl = "http://10.97.57.206:8000/"
+export const BaseUrl = "http://10.176.191.206:8000/"
 // export const BaseUrl = "http://readytoride.in/";
 export const secretKeyData= "RTRPartner_30012001"
 export const Google_map = "AIzaSyCATOPiFqH1MavVSTy_TKSZ3hfK8II3Www";
@@ -59,7 +59,10 @@ export const paymentApis = {
     verify: '/cashfree/verify',
     topUp: '/driver-settle',
     topUpVerify: '/verify-driver-settlement',
-    bankDetails: 'bank-details'
+    bankDetails: 'bank-details',
+    withdrawRequest: '/withdrawal-request',
+    RequestList: '/withdrawals',
+    cancelRequest: '/withdrawal-request/cancel'
 }
 
 export const referalApi = {
