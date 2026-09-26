@@ -13,11 +13,11 @@ export const Get = async (url: string, attachToken = "NoToken"): Promise<any> =>
     if (convertToLowerCase(attachToken) === convertToLowerCase("rtrToken")) {
         headers = { ...(await rtrToken()), };
     }
+    
     try {
         const res: any = await axios.get(url, {
             headers: headers,
-        })  
-        
+        })
         return res
     } catch (error) {
         showError(error)

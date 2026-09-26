@@ -58,7 +58,6 @@ const RequestList = () => {
     }
 
     const RenderItem = ({ item }: any) => {
-        console.log(item);
         
         return (
             <View className="mx-4 mt-3 rounded-xl p-4" style={{ backgroundColor: "#fff", elevation: 3, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 4, }} >

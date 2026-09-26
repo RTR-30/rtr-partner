@@ -13,11 +13,11 @@ import MenuScreen from "../Component/PrivateComponent/Menu/index";
 import HelpAndFeedback from "../Component/PrivateComponent/HelpAndFeedback/index";
 import ContactUs from "../Component/PrivateComponent/ContactUs/index";
 import Statistics from "../Component/PrivateComponent/Statistics/index";
-import ForgetPassword from "../Component/PublicComponent/Login/forgetPassword";
+import ForgetPassword from "../Component/PublicComponent/Login/ForgetPassword";
 import MyReferal from "../Component/PrivateComponent/MyReferal";
 import Profile from "../Component/PrivateComponent/Profile";
 import RequestList from "../Component/PrivateComponent/Payment/RequestList";
-
+import PackagePurchase from "../Common/PackagePurchase";
 import TripDetails from "../Component/PrivateComponent/Duty/TripDetails";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -88,6 +88,7 @@ const NavigationPage = () => {
                 <Stack.Screen name="MyReferal" component={MyReferal}/>
                 <Stack.Screen name="Profile" component={Profile}/>
                 <Stack.Screen name="RequestList" component={RequestList}/>
+                <Stack.Screen name="PackagePurchase" component={PackagePurchase}/>
             </Stack.Navigator>
         </NavigationContainer>
     )

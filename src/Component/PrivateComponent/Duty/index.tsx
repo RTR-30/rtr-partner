@@ -8,7 +8,8 @@ import {
     ActivityIndicator,
     ToastAndroid,
     RefreshControl,
-    Image
+    Image,
+    ScrollView
 } from "react-native";
 
 import Header from "../../../Common/Header/index";
@@ -40,7 +41,7 @@ const DutyScreen = () => {
     const [gearType, setGearType] = useState<any[]>([]);
     const [selectedGearType, setSelectedGearType] = useState("All");
 
-    const fetchData = async (token: any, limit: any, page: any, region: any) => {
+    const fetchData = async (limit: any, page: any, region: any) => {
         if (footerLoader) {
             setShowLoader(false);
         } else {
@@ -48,10 +49,16 @@ const DutyScreen = () => {
         }
 
         try {
-            const response = await fetchAllDuty(token, limit, page, region?.lat, region?.long, selectedGearType);
+            const response = await fetchAllDuty(limit, page, region?.lat, region?.long, selectedGearType);
 
-            setTotalDataList(response.data.total)
-            setDutyData(response.data.bookingList);
+            const { data: { bookingList = [], message = "", status = 0 } } = response;
+
+            if (status === 200) {
+                setTotalDataList(response.data.total)
+                setDutyData(bookingList);
+            } else {
+                showError(message)
+            }
         } catch (error) {
             showError(error)
         } finally {
@@ -66,7 +73,7 @@ const DutyScreen = () => {
         try {
             const res = await gearTypeService();
             const { data: { success = false, data = [], message = "" } } = res
-            
+
             if (success === true) {
                 setGearType(["All", ...data]);
             } else {
@@ -87,8 +94,8 @@ const DutyScreen = () => {
         setCurrentPageLimit(10);
         setDutyData([]);
         fetchUserData().then(() => {
-            fetchData(token, currentPageLimit, 1, latlong).catch(() => {
-                ToastAndroid.show("Check Internet Connection", ToastAndroid.SHORT);
+            fetchData(currentPageLimit, 1, latlong).catch(() => {
+                showError("Check Internet Connection");
             }).finally(() => {
                 setShowLoader(false);
                 setOnRefreshing(false);
@@ -104,19 +111,15 @@ const DutyScreen = () => {
 
     const fetchUserData = async () => {
         try {
-            const storedUserData = await AsyncStorage.getItem("UserData");
             const region: any = await AsyncStorage.getItem("latlong");
-
-            const tokens: any = await AsyncStorage.getItem("token");
-            if (storedUserData || tokens || region) {
+            if (region) {
                 const regi = JSON.parse(region);
-                setToken(tokens);
                 setlatLong(regi)
-                await fetchGearType()
-                await fetchData(tokens, currentPageLimit, 1, regi);
+
+                await fetchData(currentPageLimit, 1, regi);
             }
         } catch (error) {
-            console.error("Error fetching user data from AsyncStorage:", error);
+            showError("Error fetching user data from AsyncStorage");
         }
     };
 
@@ -133,15 +136,15 @@ const DutyScreen = () => {
     }
 
     useEffect(() => {
-        if(token !== null){
-            fetchData(token, currentPageLimit, 1, latlong)
-        }
+        if (isEnabled) {fetchData(currentPageLimit, 1, latlong)}
     }, [selectedGearType])
 
     useFocusEffect(
         React.useCallback(() => {
-            fetchUserData();
-            fetchGearType()
+            if (isEnabled) {
+                fetchUserData();
+                fetchGearType();
+            }
         }, [])
     );
 
@@ -174,38 +177,54 @@ const DutyScreen = () => {
                         </View>
                     ) : (
                         <>
-                            {dutyData.length > 0 ? (
-                                <>
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            flexWrap: "wrap",
-                                            marginBottom: 10,
-                                        }}
-                                    >
-                                        {gearType.map((item, index) => (
-                                            <TouchableOpacity
-                                                key={index}
-                                                onPress={() => setSelectedGearType(item)}
+                            <View
+                                style={{
+                                    flexDirection: "row",
+                                    flexWrap: "wrap",
+                                    marginBottom: 10,
+                                }}
+                            >
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    style={{ marginBottom: 10 }}
+                                    contentContainerStyle={{
+                                        paddingRight: 10,
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    {gearType.map((item, index) => (
+                                        <TouchableOpacity
+                                            key={index}
+                                            onPress={() => setSelectedGearType(item)}
+                                            style={{
+                                                paddingHorizontal: 18,
+                                                paddingVertical: 8,
+                                                borderRadius: 20,
+                                                marginRight: 10,
+                                                backgroundColor:
+                                                    selectedGearType === item
+                                                        ? COLORS.primary
+                                                        : "#F2F2F2",
+                                            }}
+                                        >
+                                            <Text
+                                                className="font-bold"
                                                 style={{
-                                                    paddingHorizontal: 18,
-                                                    paddingVertical: 8,
-                                                    borderRadius: 20,
-                                                    marginRight: 10,
-                                                    marginBottom: 10,
-                                                    backgroundColor:
-                                                        selectedGearType === item ? COLORS.primary : "#F2F2F2",
+                                                    color:
+                                                        selectedGearType === item
+                                                            ? "#FFF"
+                                                            : "#000",
                                                 }}
                                             >
-                                                <Text
-                                                    className="font-bold"
-                                                    style={{ color: selectedGearType === item ? "#FFF" : "#000" }}
-                                                >
-                                                    {item}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
+                                                {item}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                            {dutyData.length > 0 ? (
+                                <>
                                     <FlatList
                                         data={dutyData}
                                         renderItem={({ item }: any) => <RenderList item={item} setShowLoader={setShowLoader} />}

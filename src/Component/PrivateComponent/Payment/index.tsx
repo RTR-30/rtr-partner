@@ -12,14 +12,23 @@ import {
     Alert,
 } from "react-native";
 import Header from "../../../Common/Header";
-import { paymentCard } from "../../../Common/images";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TopUpService, TopUpVerifyService, UpdateBankDetailsService, UserDetailsService, walletService, WithdrawRequestService } from "./helper";
 import RenderPayment from "./renderPayment";
 import { COLORS } from "../../../utils/ColorCode";
 import { showError, showSuccess } from "../../../Common/ToastMessage";
 import Loader from "../../../Common/Loader";
+import {
+    CFErrorResponse,
+    CFPaymentGatewayService,
+} from "react-native-cashfree-pg-sdk";
+
+import {
+    CFEnvironment,
+    CFSession,
+} from "cashfree-pg-api-contract";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { openCashfreePayment } from "../../../utils/secureFile";
 
 const PaymentScreen = () => {
     const value = "My Wallet";
@@ -31,7 +40,6 @@ const PaymentScreen = () => {
     const [topUp, setTopUp] = useState<any>({
         amount: ''
     });
-    const [linkIds, setLinkIds] = useState<any>(null)
     const [withdraw, setWithdraw] = useState<any>({
         amount: 0,
         accountNumber: "",
@@ -44,8 +52,6 @@ const PaymentScreen = () => {
     const [showTopUp, setShowTopup] = useState<boolean>(false);
     const [showWithdraw, setShowWithdraw] = useState<boolean>(false);
     const [amountCount, setAmountCount] = useState<any>('');
-
-    const [verifyTopUp, setVerifyTopUp] = useState<boolean>(false);
 
     const [errorMsg, setErrorMsg] = useState<any>({
         topUp: '',
@@ -100,16 +106,16 @@ const PaymentScreen = () => {
 
     const TopUpVerify = async (linkIdss: any) => {
         setLoading(true);
+
         const payload = {
             linkId: linkIdss
         }
+
         try {
             const res = await TopUpVerifyService(payload);
             const { data: { message = '', success = false } } = res;
 
             if (success === true) {
-                setVerifyTopUp(false);
-                setLinkIds(null);
                 handleWallet();
                 fetchUserDetails();
                 closeTopUp();
@@ -178,41 +184,19 @@ const PaymentScreen = () => {
         }
     }
 
-    const openCashfreePayment = async (paymentLink: string) => {
-        try {
-
-            if (!paymentLink) {
-                Alert.alert("Error", "Payment link is empty");
-                return;
-            }
-
-            setVerifyTopUp(true);
-            await Linking.openURL(paymentLink);
-        } catch (error: any) {
-
-            Alert.alert(
-                "Payment Error",
-                error?.message || "Unable to open Cashfree payment"
-            );
-        }
-    };
-
     const SubmitTopup = async () => {
         setLoading(true)
-        setErrorMsg({
-            topUp: '',
-            withdraw: '',
-        });
+        setErrorMsg({ topUp: '', withdraw: '' });
         const payload = {
             amount: topUp?.amount
         }
         try {
             const res = await TopUpService(payload);
-            const { data: { success = false, payment_link = "", message = "", link_id = "" } } = res
+            const { data: { success = false, payment_link = "", message = "", link_id = "", order_id = "", session_id = "" } } = res
 
             if (success === true) {
-                setLinkIds(link_id)
-                await openCashfreePayment(payment_link)
+                await AsyncStorage.setItem("cashfree_link_id", String(link_id));
+                await openCashfreePayment(order_id, session_id);
             } else {
                 showError(message)
             }
@@ -261,9 +245,43 @@ const PaymentScreen = () => {
     }
 
     useEffect(() => {
+        const initializeCashfree = async () => {
+            try {
+                CFPaymentGatewayService.setCallback({
+                    onVerify: async (orderID: string) => {
+                        const linkId = await AsyncStorage.getItem("cashfree_link_id");
+
+                        if (!linkId) {
+                            showError("Payment link ID not found");
+                            return;
+                        }
+                        showSuccess("payment done");
+                        handleWallet();
+                        fetchUserDetails();
+                        closeTopUp();
+
+                    },
+
+                    onError: (error: CFErrorResponse, orderID: string) => {
+                        setLoading(false);
+                        showError("Payment failed or cancelled");
+                    },
+                });
+            } catch (error) {
+                showError(error);
+            }
+        };
+
+        initializeCashfree();
+
+        return () => {
+            CFPaymentGatewayService.removeCallback();
+        };
+    }, []);
+
+    useEffect(() => {
         if (userData) {
-            console.log("ffef",userData);
-            
+
             setWithdraw((prev: any) => ({
                 ...prev,
                 accountNumber: userData?.bank_account_number ?? "",
@@ -274,6 +292,7 @@ const PaymentScreen = () => {
             }));
         }
     }, [userData]);
+
 
     useFocusEffect(
         React.useCallback(() => {
@@ -292,42 +311,42 @@ const PaymentScreen = () => {
                     <Loader />
                 </View>
             )}
-            <View className="flex-[9] rounded-t-[40px] p-3 bg-[#fff]">
-                <View className="w-full bg-white p-2 flex-row justify-between">
+            <View className="rounded-t-[40px] p-3 bg-[#fff]" style={{ flex: 9 }}>
+                <View className="w-full bg-white p-1 flex-row justify-between">
                     <View className="my-2 w-[45%] border-[2px] justify-center items-center rounded-xl p-2" style={{ backgroundColor: "#FFF", elevation: 3, borderColor: COLORS?.primary }}>
-                        <Text className="text-black text-[18px] font-medium text-center">Wallet Balance</Text>
-                        <Text className="text-[24px] font-bold text-center" style={{ color: COLORS.primary }}>₹{userData?.wallet_balance}</Text>
+                        <Text className="text-black text-[12px] font-medium text-center">Wallet Balance</Text>
+                        <Text className="text-[14px] font-bold text-center" style={{ color: COLORS.primary }}>₹{userData?.wallet_balance}</Text>
                     </View>
 
                     <View className="my-2 w-[45%] border-[2px] justify-center items-center rounded-xl p-2" style={{ backgroundColor: "#FFF", elevation: 3, borderColor: COLORS?.primary }}>
-                        <Text className="text-black text-[18px] font-medium text-center">Total Transaction</Text>
-                        <Text className="text-[24px] font-bold text-center" style={{ color: COLORS.primary }}>₹{totalAmount}</Text>
+                        <Text className="text-black text-[12px] font-medium text-center">Total Transaction</Text>
+                        <Text className="text-[14px] font-bold text-center" style={{ color: COLORS.primary }}>₹{totalAmount}</Text>
                     </View>
                 </View>
 
-                <View className="w-full bg-white p-2 flex-row justify-around">
-                    <View className="w-[30%] h-12 rounded-lg" style={{ backgroundColor: COLORS?.primary }}>
+                <View className="w-full bg-white p-1 flex-row justify-around">
+                    <View className="w-[30%] h-10 rounded-lg" style={{ backgroundColor: COLORS?.primary }}>
                         <TouchableOpacity onPress={() => openTopUp()} className="w-full h-full justify-center items-center">
-                            <Text className="text-white text-[18px] font-bold text-center">Top Up</Text>
+                            <Text className="text-white text-[12px] font-bold text-center">Top Up</Text>
                         </TouchableOpacity>
                     </View>
 
-                    <View className="w-[30%] h-12 rounded-lg" style={{ backgroundColor: COLORS?.primary }}>
+                    <View className="w-[30%] h-10 rounded-lg" style={{ backgroundColor: COLORS?.primary }}>
                         <TouchableOpacity onPress={() => openWithdraw()} className="w-full h-full justify-center items-center">
-                            <Text className="text-white text-[18px] font-bold text-center">Withdraw</Text>
+                            <Text className="text-white text-[12px] font-bold text-center">Withdraw</Text>
                         </TouchableOpacity>
                     </View>
 
-                    <View className="w-[30%] h-12 rounded-lg" style={{ backgroundColor: COLORS?.primary }}>
+                    <View className="w-[30%] h-10 rounded-lg" style={{ backgroundColor: COLORS?.primary }}>
                         <TouchableOpacity onPress={goToRequestList} className="w-full h-full justify-center items-center">
-                            <Text className="text-white text-[18px] font-bold text-center">Request List</Text>
+                            <Text className="text-white text-[12px] font-bold text-center">Request List</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                <View className="w-full">
+                <View className="w-full flex-1">
                     <View className="mt-2 w-full justify-center items-center">
-                        <Text className="text-center text-black text-[18px] font-bold">Transaction History</Text>
+                        <Text className="text-center text-black text-[12px] font-bold">Transaction History</Text>
                     </View>
 
                     {walletData.length === 0 ?
@@ -344,7 +363,8 @@ const PaymentScreen = () => {
                                 >
                                     <Text style={{ flex: 1, color: "#fff", fontWeight: "700", fontSize: 14 }}>Amount</Text>
                                     <Text style={{ flex: 1, color: "#fff", fontWeight: "700", fontSize: 14 }}>Payment Method</Text>
-                                    <Text style={{ flex: 1, color: "#fff", fontWeight: "700", fontSize: 14, textAlign: "right" }}>Date & Time</Text>
+                                    <Text style={{ flex: 1, color: "#fff", fontWeight: "700", fontSize: 14 }}>Description</Text>
+                                    <Text style={{ flex: 1, color: "#fff", fontWeight: "700", fontSize: 14 }}>Date & Time</Text>
                                 </View>
                             )}
                             renderItem={({ item }: any) => (
@@ -455,14 +475,7 @@ const PaymentScreen = () => {
                             </TouchableOpacity>
                         </View>
 
-                        {verifyTopUp &&
-                            <View className="mt-2 p-2 justify-center items-center">
-                                <Text className="text-black text-[16px] font-bold">Once Payment Done Check To Verify</Text>
-                                <TouchableOpacity onPress={() => TopUpVerify(linkIds)}>
-                                    <Text className="text-[16px] font-bold" style={{ color: COLORS.primary }}>Verify</Text>
-                                </TouchableOpacity>
-                            </View>
-                        }
+
                     </View>
                 </View>
             </Modal>

@@ -1,4 +1,4 @@
-export const BaseUrl = "http://10.176.191.206:8000/"
+export const BaseUrl = "http://10.137.76.206:8000/"
 // export const BaseUrl = "http://readytoride.in/";
 export const secretKeyData= "RTRPartner_30012001"
 export const Google_map = "AIzaSyCATOPiFqH1MavVSTy_TKSZ3hfK8II3Www";
@@ -50,7 +50,7 @@ export const ridersForm = {
 }
 
 export const wallet = {
-    transactions_history : "/user-transactions"
+    transactions_history : "/wallet-transactions"
 }
 
 export const paymentApis = {

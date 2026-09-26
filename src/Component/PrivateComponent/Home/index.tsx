@@ -1,26 +1,22 @@
 import React, { useEffect, useState, useRef } from "react";
 import { View, Text, Platform, PermissionsAndroid, Alert, Switch, Image, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, FlatList } from "react-native";
 
-import MapView, { Marker, Polyline } from "react-native-maps";
-import Geolocation from "@react-native-community/geolocation";
-import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleStatus } from "../../../redux/reduxReducer";
 import { validateAadhaar } from "../../../Common/AadhaarCardValid/aadharCardValid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GetMyPackageService, getUserDetailsService, PaymentProcessService, verifyDetailsServices } from "./helper";
-import MapViewDirections from "react-native-maps-directions";
-import { Google_map } from "../../../../environment/ApiManager";
 import { showError, showSuccess } from "../../../Common/ToastMessage";
 import { COLORS } from "../../../utils/ColorCode";
-import PaymentRender from "./PaymentRender";
-import PackagePurchase from "../../../Common/PackagePurchase";
+import ForceUpdate from "../../../Common/ForceUpdate";
+import GetLocation from "react-native-get-location";
 
 const Home = () => {
     const navigation: any = useNavigation();
 
     const [loader, setLoader] = useState<boolean>(false);
-    const [showPaymentModal, setShowPaymentModal] = useState<any>(false);
     const [uploadModal, setUploadModal] = useState<any>(false);
 
     const [aadhaar, setAadhaar] = useState('');
@@ -29,6 +25,8 @@ const Home = () => {
     const [region, setRegion] = useState<any>(null);
 
     const mapRef: any = useRef(null);
+    const [updatedAppVersion, setUpdatedAppVersion] = useState<any>(null)
+    const platformVersion = Platform.OS === "android" ? updatedAppVersion?.android : updatedAppVersion?.ios;
 
     const dispatch = useDispatch();
     const isEnabled = useSelector((state: any) => state.status.isEnabled);
@@ -141,7 +139,7 @@ const Home = () => {
     }
 
     const togglePayment = () => {
-        setShowPaymentModal(true);
+        navigation.navigate('PackagePurchase')
     }
 
     const handleCheckAadhaar = () => {
@@ -160,7 +158,7 @@ const Home = () => {
                 const granted = await PermissionsAndroid.request(
                     PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
                 );
-
+    
                 if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
                     Alert.alert(
                         "Permission Denied",
@@ -169,58 +167,41 @@ const Home = () => {
                     return;
                 }
             }
-
-
-            Geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    setRegion({
-                        latitude,
-                        longitude,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01,
-                    });
-                },
-                (error) => {
-                    console.error("Geolocation error:", error);
-                    Alert.alert(
-                        "Location Error",
-                        "Unable to fetch location. Please ensure location services are enabled."
-                    );
-                }
+    
+            const location = await GetLocation.getCurrentPosition({
+                enableHighAccuracy: false,
+                timeout: 10000,
+            });
+    
+            const { latitude, longitude } = location;
+    
+            const newRegion = {
+                latitude,
+                longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+            };
+    
+            setRegion(newRegion);
+    
+            await AsyncStorage.setItem(
+                "latlong",
+                JSON.stringify({
+                    lat: latitude,
+                    long: longitude,
+                })
             );
-
-            const watchId = Geolocation.watchPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    const newRegion = {
-                        latitude,
-                        longitude,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01,
-                    };
-                    setRegion(newRegion);
-                    const latlong = {
-                        lat: latitude,
-                        long: longitude
-                    }
-                    AsyncStorage.setItem('latlong', JSON.stringify(latlong))
-                    if (mapRef.current) {
-                        mapRef.current.animateToRegion(newRegion, 1000);
-                    }
-                },
-                (error) => {
-                    console.error("Geolocation error:", error);
-                },
-                {
-                    enableHighAccuracy: true,
-                    distanceFilter: 10,
-                }
+    
+            if (mapRef.current) {
+                mapRef.current.animateToRegion(newRegion, 1000);
+            }
+    
+        } catch (error: any) {
+            Alert.alert(
+                "Location Error",
+                error?.message ||
+                "Unable to fetch location. Please ensure location services are enabled."
             );
-
-            return () => Geolocation.clearWatch(watchId);
-        } catch (err) {
-            console.error("Permission Error:", err);
         }
     };
 
@@ -252,11 +233,13 @@ const Home = () => {
         setLoader(true)
         try {
             const res = await getUserDetailsService();
-            const { data: { success = false, user = {} } } = res
+
+            const { data: { success = false, user = {}, app_versions = {} } } = res
 
             if (success === true) {
+
+                setUpdatedAppVersion(app_versions)
                 const verifyDoc = user?.verify;
-                
                 if (verifyDoc === "false") {
                     toggleDocument(true);
                 } else {
@@ -272,12 +255,6 @@ const Home = () => {
         }
     }
 
-    // useEffect(() => {
-    //     fetchUserData();
-    //     fetchUserDetails();
-    //     requestLocationPermission();
-    // }, []);
-
     useFocusEffect(
         React.useCallback(() => {
             fetchUserDetails();
@@ -285,9 +262,10 @@ const Home = () => {
         }, [])
     );
 
-    if (!region) {
-        return null;
-    }
+
+    // if (!region) {
+    //     return null;
+    // }
 
     const customMapStyle = [
         {
@@ -384,18 +362,42 @@ const Home = () => {
             </View>
 
             <View className="" style={{ flex: 9 }}>
-                <MapView
-                    ref={mapRef}
-                    // customMapStyle={customMapStyle}
-                    style={{ width: "100%", height: "100%" }}
-                    initialRegion={region}
-                    showsUserLocation={true}
-                    followsUserLocation={true}
-                >
-                </MapView>
+                {region ? (
+                    <MapView
+                        ref={mapRef}
+                        provider={PROVIDER_GOOGLE}
+                        style={{ flex: 1 }}
+                        initialRegion={region}
+                        showsUserLocation={true}
+                        showsMyLocationButton={true}
+                        followsUserLocation={true}
+                        customMapStyle={customMapStyle}
+                    >
+                        <Marker
+                            coordinate={{
+                                latitude: region.latitude,
+                                longitude: region.longitude,
+                            }}
+                            title="My Location"
+                        />
+                    </MapView>
+                ) : (
+                    <View
+                        style={{
+                            flex: 1,
+                            justifyContent: "center",
+                            alignItems: "center",
+                            backgroundColor: "#eeeeee",
+                        }}
+                    >
+                        <Text style={{ color: "black", fontSize: 16 }}>
+                            Getting your location...
+                        </Text>
+                    </View>
+                )}
             </View>
 
-
+            <ForceUpdate latestVersion={platformVersion?.latest_version} />
 
             <Modal
                 visible={uploadModal}
@@ -437,14 +439,7 @@ const Home = () => {
                     </View>
                 </View>
             </Modal>
-
-            {showPaymentModal ? (
-                <PackagePurchase
-                    visible={showPaymentModal}
-                    onClose={() => setShowPaymentModal(false)}
-                />
-            ) : null}
-        </View >
+        </View>
     );
 };
 

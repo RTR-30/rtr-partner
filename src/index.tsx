@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect } from "react";
-import { StatusBar } from "react-native";
+import { StatusBar, View, Text } from "react-native";
 import { COLORS } from "./utils/ColorCode";
 
 const InitialPage = () => {
@@ -26,7 +26,10 @@ const InitialPage = () => {
     }, []);
 
     return (
-        <StatusBar backgroundColor={COLORS.primary} barStyle={"light-content"} />
+        <View style={{ flex: 1, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }}>
+            <StatusBar backgroundColor={COLORS.primary} barStyle={"light-content"} />
+            <Text>Initial Page Loading...</Text>
+        </View>
     )
 }
 

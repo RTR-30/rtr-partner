@@ -13,11 +13,12 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { CancelRideService, CashCollectService, EndRideService, onlinePaymentService, StartRideService, verifyPaymentService } from "./helper";
 import { useNavigation } from "@react-navigation/native";
-import Geolocation from "@react-native-community/geolocation";
+// import Geolocation from "@react-native-community/geolocation";
 import OneTimeCodeTextComponent from "../../../Common/OneTimeCodeText";
 import { showError, showSuccess } from "../../../Common/ToastMessage";
 import { COLORS } from "../../../utils/ColorCode";
 import Feedback from "../../../Common/Feedback";
+import GetLocation from "react-native-get-location";
 
 const RenderHelper = ({ item, setLoading, fetchAcceptList, payDetails, setPayDetails }: any) => {
 
@@ -32,6 +33,7 @@ const RenderHelper = ({ item, setLoading, fetchAcceptList, payDetails, setPayDet
 
     const [selectedBookingId, setSelectedBookingId] = useState<any>();
     const [showFeedback, setShowFeedback] = useState<boolean>(false);
+    const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const openFeedbackModal = () => {
         setShowFeedback(true);
@@ -41,14 +43,45 @@ const RenderHelper = ({ item, setLoading, fetchAcceptList, payDetails, setPayDet
         fetchAcceptList()
         setShowFeedback(false);
     }
+
+    const getCurrentLocation = async () => {
+        try {
+            const location = await GetLocation.getCurrentPosition({
+                enableHighAccuracy: true,
+                timeout: 30000,
+            });
+    
+            const newRegion = {
+                latitude: location.latitude,
+                longitude: location.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+            };
+    
+            setRegion(newRegion);
+    
+            if (mapRef.current) {
+                mapRef.current.animateToRegion(newRegion, 1000);
+            }
+    
+        } catch (error) {
+            showError("❌ Location error:");
+        }
+    };
     
     const requestLocationPermission = async () => {
         try {
             if (Platform.OS === "android") {
                 const granted = await PermissionsAndroid.request(
-                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                    {
+                        title: "Location Permission",
+                        message: "This app needs your location to navigate to the customer.",
+                        buttonPositive: "Allow",
+                        buttonNegative: "Cancel",
+                    }
                 );
-
+    
                 if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
                     Alert.alert(
                         "Permission Denied",
@@ -57,58 +90,34 @@ const RenderHelper = ({ item, setLoading, fetchAcceptList, payDetails, setPayDet
                     return;
                 }
             }
+    
+            const location = await GetLocation.getCurrentPosition({
+                enableHighAccuracy: true,
+                timeout: 30000,
+            });
+    
+            const { latitude, longitude } = location;
+    
+            const newRegion = {
+                latitude,
+                longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+            };
+    
+            setRegion(newRegion);
+    
+            if (mapRef.current) {
+                mapRef.current.animateToRegion(newRegion, 1000);
+            }
+    
+        } catch (error: any) {
 
-
-            Geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-
-                    setRegion({
-                        latitude,
-                        longitude,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01,
-                    });
-                },
-                (error) => {
-                    console.error("Geolocation error:", error);
-                    Alert.alert(
-                        "Location Error",
-                        "Unable to fetch location. Please ensure location services are enabled."
-                    );
-                }
+            Alert.alert(
+                "Location Error",
+                error?.message ||
+                "Unable to fetch location. Please make sure GPS/Location is enabled."
             );
-
-            const watchId = Geolocation.watchPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    const newRegion = {
-                        latitude,
-                        longitude,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01,
-                    };
-                    setRegion(newRegion);
-                    const latlong = {
-                        lat: latitude,
-                        long: longitude
-                    }
-                    if (mapRef.current) {
-                        mapRef.current.animateToRegion(newRegion, 1000);
-                    }
-                },
-                (error) => {
-                    console.error("Geolocation error:", error);
-                },
-                {
-                    enableHighAccuracy: true,
-                    distanceFilter: 10,
-                }
-            );
-
-            return () => Geolocation.clearWatch(watchId);
-        } catch (err) {
-            console.error("Permission Error:", err);
         }
     };
 

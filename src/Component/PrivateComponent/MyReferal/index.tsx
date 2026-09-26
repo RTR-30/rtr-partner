@@ -14,6 +14,7 @@ import { showError } from "../../../Common/ToastMessage";
 import { referalHistoryService } from "./helper";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { COLORS } from "../../../utils/ColorCode";
+import { getUserDetailsService } from "../Home/helper";
 
 const GiftImg = require('../../../../assets/Imgs/Gift.png')
 
@@ -71,6 +72,24 @@ const MyReferal = () => {
         }
     }
 
+    const fetchUserDetails = async () => {
+            setLoading(true)
+            try {
+                const res = await getUserDetailsService();
+                const { data: { success = false, user = {} } } = res
+                
+                if (success === true) {
+                    setUserData(user);
+                } else {
+                    showError("user details error")
+                }
+            } catch (error) {
+                showError(error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
     const formatDateTime = (dateString: any) => {
         const date = new Date(dateString);
 
@@ -84,6 +103,7 @@ const MyReferal = () => {
     };
 
     useEffect(() => {
+        fetchUserDetails()
         fetchReferalHistory()
     }, []);
 
@@ -96,7 +116,7 @@ const MyReferal = () => {
             <View className="flex-[9] bg-white rounded-t-[30px]">
                 <View className="w-full p-5 rounded-b-[30px]" style={{backgroundColor:COLORS.primary}}>
                     <View className="mt-1">
-                        <Text className="text-white font-bold text-[25px] text-center">Referal Your Friend And Earn</Text>
+                        <Text className="text-white font-bold text-[20px] text-center">Referal Your Friend And Earn</Text>
                     </View>
 
                     <View className="mt-2 w-full justify-center items-center">
@@ -109,30 +129,30 @@ const MyReferal = () => {
 
                         <View className="flex-row justify-between mt-2 px-2 w-full">
                             <View className="items-center">
-                                <Text className="text-white font-bold">Pending</Text>
-                                <Text className="text-white text-[18px]">
+                                <Text className="text-white font-bold text-[14px]">Pending</Text>
+                                <Text className="text-white text-[12px]">
                                     ₹{referalAmount.pending}
                                 </Text>
                             </View>
 
                             <View className="items-center">
-                                <Text className="text-white font-bold">Confirmed</Text>
-                                <Text className="text-white text-[18px]">
+                                <Text className="text-white font-bold text-[14px]">Confirmed</Text>
+                                <Text className="text-white text-[12px]">
                                     ₹{referalAmount.confirm}
                                 </Text>
                             </View>
                         </View>
                     </View>
 
-                    <View className="mt-5 border-dashed flex-row w-full border-white border-[1px] p-3">
+                    <View className="mt-5 border-dashed flex-row w-full border-white border-[1px] p-2">
                         <View className="w-[60%] justify-center items-center border-dashed border-r-[1px] border-white">
-                            <Text className="text-white font-semibold text-[16px]">Your Refer Code</Text>
-                            <Text className="text-white font-bold text-[25px] mt-2">{userData?.referral_code}</Text>
+                            <Text className="text-white font-semibold text-[13px]">Your Refer Code</Text>
+                            <Text className="text-white font-bold text-[16px] mt-2">{userData?.referral_code}</Text>
                         </View>
 
                         <View className="w-[40%] justify-center items-center">
                             <TouchableOpacity onPress={copyToClipboard}>
-                                <Text className="text-white font-bold text-[20px]">Copy Code</Text>
+                                <Text className="text-white font-bold text-[16px]">Copy Code</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

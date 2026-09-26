@@ -15,7 +15,7 @@ import Loader from "../../../Common/Loader";
 import { COLORS } from "../../../utils/ColorCode";
 import { showError, showSuccess } from "../../../Common/ToastMessage";
 
-const forgetPassword = () => {
+const ForgetPassword = () => {
     const navigation: any = useNavigation();
     const [showLoader, setShowLoader] = useState<boolean>(false);
     const [email, setEmail] = useState<any>(null);
@@ -283,4 +283,4 @@ const forgetPassword = () => {
     );
 };
 
-export default forgetPassword;
+export default ForgetPassword;

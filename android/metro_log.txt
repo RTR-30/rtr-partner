@@ -1,0 +1,14 @@
+info Welcome to React Native v0.76
+info Starting dev server on port 8081...
+Error: listen EADDRINUSE: address already in use :::8081
+    at Server.setupListenHandle [as _listen2] (node:net:1872:16)
+    at listenInCluster (node:net:1920:12)
+    at Server.listen (node:net:2008:7)
+    at C:\Users\Yogesh\Desktop\Drive4U\RTR_Partner\node_modules\metro\src\index.flow.js:331:14
+    at new Promise (<anonymous>)
+    at earlyPortCheck (C:\Users\Yogesh\Desktop\Drive4U\RTR_Partner\node_modules\metro\src\index.flow.js:327:11)
+    at exports.runServer (C:\Users\Yogesh\Desktop\Drive4U\RTR_Partner\node_modules\metro\src\index.flow.js:125:9)
+    at Object.runServer [as func] (C:\Users\Yogesh\Desktop\Drive4U\RTR_Partner\node_modules\@react-native\community-cli-plugin\dist\commands\start\runServer.js:136:47)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Command.handleAction (C:\Users\Yogesh\Desktop\Drive4U\RTR_Partner\node_modules\@react-native-community\cli\build\index.js:118:9)
+info Run CLI with --verbose flag for more details.

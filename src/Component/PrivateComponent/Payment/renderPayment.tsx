@@ -10,14 +10,13 @@ const RenderPayment = ({ item }: any) => {
   return (
     <View style={styles.row}>
       {/* Amount */}
-      <Text style={[styles.cell, styles.amount]}>
-        ₹{item.amount}
-      </Text>
+      <Text style={[styles.cell, styles.amount]}>₹{item.amount}</Text>
 
       {/* Payment Method */}
-      <Text style={[styles.cell, styles.method]}>
-        {item.payment_method}
-      </Text>
+      <Text style={[styles.cell, styles.method]}>{item.transaction_type}</Text>
+
+      {/* Descriptions */}
+      <Text style={[styles.cell, styles.method]}>{item.description}</Text>
 
       {/* Date & Time */}
       <View style={styles.dateContainer}>
@@ -51,7 +50,7 @@ const styles = StyleSheet.create({
 
   cell: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 12,
     color: "#111827",
   },
 
