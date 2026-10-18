@@ -84,6 +84,24 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
+                          "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384",
+                          "-DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384"
+            }
+            ndkBuild {
+                arguments "APP_SUPPORT_FLEXIBLE_PAGE_SIZES=true"
+                cFlags "-Wl,-z,max-page-size=16384"
+                cppFlags "-Wl,-z,max-page-size=16384"
+            }
+        }
+    }
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
     signingConfigs {
         debug {
@@ -109,8 +127,8 @@ android {
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
-    implementation("com.facebook.react:react-android");
-    implementation 'com.facebook.fresco:animated-gif:2.5.0'
+    implementation("com.facebook.react:react-android")
+    implementation 'com.facebook.fresco:animated-gif:3.6.0'
     implementation project(':react-native-maps')
     implementation 'com.google.android.gms:play-services-maps:20.0.0'
     implementation "com.google.android.gms:play-services-location:21.3.0"

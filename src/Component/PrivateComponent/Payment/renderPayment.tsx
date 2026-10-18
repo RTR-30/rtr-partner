@@ -1,84 +1,58 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-} from "react-native";
+import { View, Text } from "react-native";
 
 const RenderPayment = ({ item }: any) => {
-    
-  return (
-    <View style={styles.row}>
-      {/* Amount */}
-      <Text style={[styles.cell, styles.amount]}>₹{item.amount}</Text>
+    const formattedDate = item?.created_at
+        ? new Date(item.created_at).toLocaleDateString("en-IN")
+        : "";
 
-      {/* Payment Method */}
-      <Text style={[styles.cell, styles.method]}>{item.transaction_type}</Text>
+    const formattedTime = item?.created_at
+        ? new Date(item.created_at).toLocaleTimeString("en-IN", {
+              hour: "2-digit",
+              minute: "2-digit",
+          })
+        : "";
 
-      {/* Descriptions */}
-      <Text style={[styles.cell, styles.method]}>{item.description}</Text>
+    return (
+        <View className="flex-row items-center bg-white py-3 px-3 border-b border-gray-100">
+            {/* Amount */}
+            <View className="flex-1 pr-1">
+                <Text className="text-xs font-extrabold text-emerald-600">
+                    ₹{item?.amount || 0}
+                </Text>
+            </View>
 
-      {/* Date & Time */}
-      <View style={styles.dateContainer}>
-        <Text style={styles.date}>
-          {new Date(item.created_at).toLocaleDateString("en-IN")}
-        </Text>
+            {/* Payment Method */}
+            <View className="flex-1 pr-1">
+                <Text
+                    className="text-[11px] font-bold text-blue-600 uppercase"
+                    numberOfLines={1}
+                >
+                    {item?.transaction_type || "WALLET"}
+                </Text>
+            </View>
 
-        <Text style={styles.time}>
-          {new Date(item.created_at).toLocaleTimeString("en-IN", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </Text>
-      </View>
-    </View>
-  );
+            {/* Description */}
+            <View className="flex-1 pr-1">
+                <Text
+                    className="text-[11px] font-medium text-gray-700"
+                    numberOfLines={2}
+                >
+                    {item?.description || "-"}
+                </Text>
+            </View>
+
+            {/* Date & Time */}
+            <View className="flex-1 items-end">
+                <Text className="text-[11px] font-bold text-gray-800">
+                    {formattedDate}
+                </Text>
+                <Text className="text-[10px] text-gray-400 mt-0.5">
+                    {formattedTime}
+                </Text>
+            </View>
+        </View>
+    );
 };
 
 export default RenderPayment;
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-
-  cell: {
-    flex: 1,
-    fontSize: 12,
-    color: "#111827",
-  },
-
-  amount: {
-    fontWeight: "700",
-    color: "#16A34A",
-  },
-
-  method: {
-    textTransform: "uppercase",
-    fontWeight: "600",
-    color: "#2563EB",
-  },
-
-  dateContainer: {
-    flex: 1.3,
-    alignItems: "flex-end",
-  },
-
-  date: {
-    fontSize: 13,
-    color: "#111827",
-    fontWeight: "600",
-  },
-
-  time: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-});

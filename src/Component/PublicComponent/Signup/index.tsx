@@ -1,329 +1,651 @@
-import { useNavigation, useRoute } from "@react-navigation/native";
-import React, { useState } from "react";
-import { ActivityIndicator, Alert, ToastAndroid, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
 import {
     View,
     Text,
     SafeAreaView,
     StatusBar,
-    Dimensions,
     TextInput,
     Image,
-    Modal
+    Modal,
+    ScrollView,
+    TouchableOpacity,
 } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import { fetchSignUp, signUpVerifyingMail, signUpVerifyingOtp } from "./helper";
 import Loader from "../../../Common/Loader";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
-import MaterialIcons from "react-native-vector-icons/MaterialIcons";
-import Ionicons from "react-native-vector-icons/Ionicons";
 import OneTimeCodeTextComponent from "../../../Common/OneTimeCodeText";
 import { appLogo } from "../../../Common/images/index";
 import { COLORS } from "../../../utils/ColorCode";
-import { showError } from "../../../Common/ToastMessage";
+import { showError, showSuccess } from "../../../Common/ToastMessage";
 
 const SignUp = () => {
     const navigation: any = useNavigation();
-    const route: any = useRoute()
-    const {referral} = route.params || {};
-    const [value, setValue] = useState<any>(null);
-    const [showLoader, setShowLoader] = useState<boolean>(false);
-    
-    const [errName, setErrName] = useState(false);
-    const [errEmail, setErrEmail] = useState(false);
-    const [errPassword, setErrPassword] = useState(false);
-    const [errConfirmPassword, setErrConfirmPassword] = useState(false);
-    const [errMobileNo, setErrMobileNo] = useState(false);
+    const route: any = useRoute();
+    const referralParam = route?.params?.referral ?? route?.params?.referal;
 
+    const [showLoader, setShowLoader] = useState<boolean>(false);
+
+    // Form inputs
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
+    const [mobileNo, setMobileNo] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [mobileNo, setMobileNo] = useState("");
     const [referalcode, setReferalCode] = useState("");
 
+    // Form errors
+    const [errName, setErrName] = useState(false);
+    const [errEmail, setErrEmail] = useState("");
+    const [errMobileNo, setErrMobileNo] = useState("");
+    const [errPassword, setErrPassword] = useState("");
+    const [errConfirmPassword, setErrConfirmPassword] = useState("");
+
+    // Visibility toggles
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-
+    const [referalShow, setReferalShow] = useState<boolean>(false);
     const [openModal, setOpenModal] = useState<boolean>(false);
-    const [otp, setOtp] = useState<any>(null);
+    const [otp, setOtp] = useState<any>("");
 
     const toggleModal = () => {
-        setOpenModal(!openModal);
-    }
-
-    const checkCondition = async () => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const isEmailValid = emailRegex.test(email);
-        if (!name || !email || !password || !confirmPassword || !mobileNo) {
-            setErrName(!name);
-            setErrEmail(!email || !isEmailValid);
-            setErrPassword(!password);
-            setErrConfirmPassword(!confirmPassword);
-            setErrMobileNo(!mobileNo);
-        } else if (!isEmailValid) {
-            setErrEmail(true);
-        } else if (password !== confirmPassword) {
-            setErrConfirmPassword(true);
-        } else {
-            setShowLoader(true);
-            const data = {
-                email : email
-            }
-            
-            try {
-                const response = await signUpVerifyingMail(data)
-                showError(response?.data.message);
-                toggleModal()
-            } catch (error: any) {
-                showError(error)
-            } finally{
-                setShowLoader(false);
-            }
-        }
+        setOpenModal((prev) => !prev);
     };
 
-    const checkOtp = async () => {
-        setShowLoader(true)
-        const data = {
-            email : email,
-            otp: otp
-        }
-        try{
-            const response = await signUpVerifyingOtp(data);
-            if(response.data.success === true){
-                ToastAndroid.show(response?.data.message, ToastAndroid.SHORT);
-                handleSignUp();
-                toggleModal();
-            }
-        } catch(error:any){
-            ToastAndroid.show(error.response.data.message, ToastAndroid.SHORT);
-        } finally{
-            setShowLoader(false);
-        }
-    }
+    const validateForm = () => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        let isValid = true;
 
-    const handleSignUp = async () => {
+        if (!name.trim()) {
+            setErrName(true);
+            isValid = false;
+        } else {
+            setErrName(false);
+        }
+
+        if (!email.trim()) {
+            setErrEmail("Email address is required");
+            isValid = false;
+        } else if (!emailRegex.test(email.trim())) {
+            setErrEmail("Enter a valid email address");
+            isValid = false;
+        } else {
+            setErrEmail("");
+        }
+
+        const cleanedMobile = mobileNo.trim();
+        if (!cleanedMobile) {
+            setErrMobileNo("Mobile number is required");
+            isValid = false;
+        } else if (cleanedMobile.length !== 10) {
+            setErrMobileNo("Enter a valid 10-digit mobile number");
+            isValid = false;
+        } else {
+            setErrMobileNo("");
+        }
+
+        if (!password) {
+            setErrPassword("Password is required");
+            isValid = false;
+        } else if (password.length < 6) {
+            setErrPassword("Password must be at least 6 characters");
+            isValid = false;
+        } else {
+            setErrPassword("");
+        }
+
+        if (!confirmPassword) {
+            setErrConfirmPassword("Please confirm your password");
+            isValid = false;
+        } else if (password !== confirmPassword) {
+            setErrConfirmPassword("Passwords do not match");
+            isValid = false;
+        } else {
+            setErrConfirmPassword("");
+        }
+
+        return isValid;
+    };
+
+    const checkCondition = async () => {
+        if (!validateForm()) return;
+
         setShowLoader(true);
         const data = {
-            "name": name,
-            "email": email,
-            "mobileno": mobileNo,
-            "password": password,
-            "field": "Car Driver",
-            'otp': otp,
-            'referralCode' : referalcode !== "" ? referalcode : null
-        }
+            email: email.trim().toLowerCase(),
+        };
 
         try {
-            const response = await fetchSignUp(data)
-            
-            // if (response.status === 200) {
-            setName("");
-            setEmail("");
-            setMobileNo("");
-            setPassword("");
-            setConfirmPassword("");
-            navigation.navigate("Login");
-            // }
-        } catch (error) {
-            console.error(error);
+            const response = await signUpVerifyingMail(data);
+            const { data: { message = "", success = false } } = response;
+            if (success === true) {
+                showSuccess(message || "OTP sent to your email");
+                setOpenModal(true);
+            } else {
+                showError(message || "Failed to verify email");
+            }
+        } catch (error: any) {
+            showError(error?.response?.data?.message || error?.message || "Verification failed");
         } finally {
             setShowLoader(false);
         }
     };
 
+    const checkOtp = async () => {
+        const cleanedOtp = otp ? otp.toString().trim() : "";
+        if (!cleanedOtp || cleanedOtp.length < 6) {
+            return showError("Please enter the complete 6-digit OTP");
+        }
+
+        setShowLoader(true);
+        const data = {
+            email: email.trim().toLowerCase(),
+            otp: cleanedOtp,
+        };
+
+        try {
+            const response = await signUpVerifyingOtp(data);
+            const { data: { message = "", success = false } } = response;
+            if (success === true) {
+                await handleSignUp(cleanedOtp);
+            } else {
+                showError(message || "Invalid OTP entered");
+            }
+        } catch (error: any) {
+            showError(error?.response?.data?.message || error?.message || "OTP verification failed");
+        } finally {
+            setShowLoader(false);
+        }
+    };
+
+    const handleSignUp = async (verifiedOtp: string) => {
+        setShowLoader(true);
+        const data = {
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            mobileno: mobileNo.trim(),
+            password: password,
+            field: "Car Driver",
+            otp: verifiedOtp,
+            referralCode: referalcode.trim() === "" ? null : referalcode.trim(),
+        };
+
+        try {
+            const response = await fetchSignUp(data);
+            const { data: { message = "", status = 0, success = false } } = response;
+            if (status === 200 || success === true) {
+                showSuccess(message || "Partner account created successfully!");
+                setName("");
+                setEmail("");
+                setMobileNo("");
+                setPassword("");
+                setConfirmPassword("");
+                setOtp("");
+                setOpenModal(false);
+                navigation.navigate("Login");
+            } else {
+                showError(message || "Registration failed");
+            }
+        } catch (error: any) {
+            showError(error?.response?.data?.message || error?.message || "Registration failed. Please try again.");
+        } finally {
+            setShowLoader(false);
+        }
+    };
+
+    const applyReferral = () => {
+        if (referalcode.trim() !== "") {
+            setReferalShow(false);
+            showSuccess("Referral code applied!");
+        } else {
+            showError("Please enter your referral code");
+        }
+    };
+
+    useEffect(() => {
+        if (referralParam === true) {
+            setReferalShow(true);
+        } else {
+            setReferalShow(false);
+        }
+    }, [referralParam]);
 
     return (
-        <SafeAreaView className="flex-1 justify-center items-center" style={{backgroundColor: COLORS.background}}>
-            <StatusBar backgroundColor={COLORS.primary} barStyle="light-content" />
+        <SafeAreaView className="flex-1 bg-slate-50">
+            <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
 
             {showLoader && (
-                <View
-                    style={{
-                        zIndex: 200,
-                    }}
-                    className="absolute w-full h-full"
-                >
+                <View className="absolute w-full h-full" style={{ zIndex: 200 }}>
                     <Loader />
                 </View>
             )}
-            
-            <View className="flex-1 justify-center items-center">
-                <View style={{ elevation: 3 }} className="w-[97%] justify-center items-center shadow-black bg-white rounded-[20px] p-[5%]">
-                    <View className="w-[100%]">
+
+            <ScrollView
+                className="flex-1"
+                contentContainerStyle={{
+                    flexGrow: 1,
+                    paddingHorizontal: 20,
+                    paddingTop: 16,
+                    paddingBottom: 36,
+                }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
+                {/* Header Back & Branding */}
+                <View className="flex-row items-center justify-between mb-2">
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        className="w-10 h-10 rounded-full bg-white justify-center items-center border border-slate-200"
+                        style={{ elevation: 1 }}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="arrow-back" size={20} color="#1e293b" />
+                    </TouchableOpacity>
+
+                    <View className="flex-row items-center">
                         <Image
                             source={appLogo}
-                            className="w-24 h-24 rounded-full border-[1px] border-black"
-                            resizeMode="cover"
+                            className="w-8 h-8 rounded-full mr-2"
+                            resizeMode="contain"
                         />
+                        <Text className="text-[16px] font-black tracking-tight text-slate-800">
+                            R<Text style={{ color: COLORS.primary }}>T</Text>R PARTNER
+                        </Text>
                     </View>
-                    
-                    <Text className="text-black mt-4 text-[20px] font-bold mb-5">Create Account</Text>
 
-                    <View className="w-[99%] mt-1 h-[10%]" style={{ marginVertical: 1 }}>
-                        <View className="flex-row w-full justify-center items-center border-[0.5px] rounded-[10px]">
-                            <FontAwesome name="user" color={"black"} size={20} style={{ alignSelf: 'center' }} />
+                    <View className="w-10" />
+                </View>
+
+                {/* Title & Subtitle */}
+                <View className="mt-4 mb-6">
+                    <Text className="text-[26px] font-black text-slate-900 tracking-tight">
+                        Create Account
+                    </Text>
+                    <Text className="text-[13px] text-slate-500 font-medium mt-1">
+                        Join our verified driver partner network today
+                    </Text>
+                </View>
+
+                {/* Form Card */}
+                <View
+                    className="bg-white rounded-3xl p-5 border border-slate-100 mb-6"
+                    style={{ elevation: 2 }}
+                >
+                    {/* Full Name Field */}
+                    <View className="mb-4">
+                        <Text className="text-[12px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Full Name
+                        </Text>
+                        <View
+                            className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 ${
+                                errName ? "border-red-400 bg-red-50/20" : "border-slate-200"
+                            }`}
+                        >
+                            <Ionicons
+                                name="person-outline"
+                                size={18}
+                                color={errName ? "#ef4444" : "#64748b"}
+                                style={{ marginRight: 10 }}
+                            />
                             <TextInput
-                                style={{ color: "black", paddingHorizontal: 10, height: 40, width: '90%' }}
-                                placeholder="Enter name"
-                                placeholderTextColor="gray"
+                                className="flex-1 text-[14px] text-slate-900 font-medium h-full"
+                                placeholder="Enter your full name"
+                                placeholderTextColor="#94a3b8"
+                                value={name}
                                 onChangeText={(txt) => {
                                     setName(txt);
-                                    setErrName(!txt);
+                                    if (errName) setErrName(false);
                                 }}
                             />
                         </View>
-                        {errName && <Text className="text-red-500 font-semibold">Name is required</Text>}
+                        {errName && (
+                            <Text className="text-[11px] text-red-500 font-semibold mt-1 ml-1">
+                                Full name is required
+                            </Text>
+                        )}
                     </View>
 
-                    <View className="w-[99%] mt-1 h-[10%]" style={{ marginVertical: 1 }}>
-                        <View className="flex-row w-full justify-center items-center border-[0.5px] rounded-[10px]">
-                            <MaterialIcons name="email" color={"black"} size={20} style={{ alignSelf: 'center' }} />
+                    {/* Email Field */}
+                    <View className="mb-4">
+                        <Text className="text-[12px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Email Address
+                        </Text>
+                        <View
+                            className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 ${
+                                errEmail ? "border-red-400 bg-red-50/20" : "border-slate-200"
+                            }`}
+                        >
+                            <Ionicons
+                                name="mail-outline"
+                                size={18}
+                                color={errEmail ? "#ef4444" : "#64748b"}
+                                style={{ marginRight: 10 }}
+                            />
                             <TextInput
-                                style={{ color: "black", paddingHorizontal: 10, height: 40, width: '90%' }}
-                                placeholder="Enter email id"
-                                placeholderTextColor="gray"
+                                className="flex-1 text-[14px] text-slate-900 font-medium h-full"
+                                placeholder="Enter your email id"
+                                placeholderTextColor="#94a3b8"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                value={email}
                                 onChangeText={(txt) => {
                                     setEmail(txt);
-                                    setErrEmail(!txt);
+                                    if (errEmail) setErrEmail("");
                                 }}
                             />
                         </View>
-                        {errEmail && <Text className="text-red-500 font-semibold">{email.length === 0 ? 'Email is required' : 'Invalid email address'}</Text>}
+                        {Boolean(errEmail) && (
+                            <Text className="text-[11px] text-red-500 font-semibold mt-1 ml-1">
+                                {errEmail}
+                            </Text>
+                        )}
                     </View>
 
-                    <View className="w-[99%] mt-1 h-[10%]" style={{ marginVertical: 1 }}>
-                        <View className="flex-row w-full justify-center items-center border-[0.5px] rounded-[10px]">
-                            <MaterialIcons name="phone" color={"black"} size={20} style={{ alignSelf: 'center' }} />
+                    {/* Mobile Number Field */}
+                    <View className="mb-4">
+                        <Text className="text-[12px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Mobile Number
+                        </Text>
+                        <View
+                            className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 ${
+                                errMobileNo ? "border-red-400 bg-red-50/20" : "border-slate-200"
+                            }`}
+                        >
+                            <Ionicons
+                                name="call-outline"
+                                size={18}
+                                color={errMobileNo ? "#ef4444" : "#64748b"}
+                                style={{ marginRight: 8 }}
+                            />
+                            <Text className="text-[14px] font-bold text-slate-600 mr-2 border-r border-slate-200 pr-2">
+                                +91
+                            </Text>
                             <TextInput
-                                style={{ color: "black", paddingHorizontal: 10, height: 40, width: '90%' }}
-                                placeholder="Enter mobile number"
-                                placeholderTextColor="gray"
-                                keyboardType='number-pad'
+                                className="flex-1 text-[14px] text-slate-900 font-medium h-full"
+                                placeholder="10-digit mobile number"
+                                placeholderTextColor="#94a3b8"
+                                keyboardType="number-pad"
+                                maxLength={10}
                                 value={mobileNo}
                                 onChangeText={(text) => {
-                                    const cleaned = text.replace(/[^0-9]/g, '');
+                                    const cleaned = text.replace(/[^0-9]/g, "");
                                     setMobileNo(cleaned);
-                                    // setMobileNo(text);
-                                    setErrMobileNo(!text);
+                                    if (errMobileNo) setErrMobileNo("");
                                 }}
                             />
                         </View>
-                        {errMobileNo && <Text className="text-red-500 font-semibold">Mobile number is required</Text>}
+                        {Boolean(errMobileNo) && (
+                            <Text className="text-[11px] text-red-500 font-semibold mt-1 ml-1">
+                                {errMobileNo}
+                            </Text>
+                        )}
                     </View>
 
-                    {referral ? 
-                        <View className="w-[99%] mt-1 h-[10%]" style={{ marginVertical: 1 }}>
-                            <View className="flex-row w-full justify-center items-center border-[0.5px] rounded-[10px]">
-                                <Ionicons name="people" color={"black"} size={20} style={{ alignSelf: 'center' }} />
-                                <TextInput
-                                    style={{ color: "black", paddingHorizontal: 10, height: 40, width: '90%' }}
-                                    placeholder="Enter referal code"
-                                    placeholderTextColor="gray"
-                                    value={referalcode}
-                                    onChangeText={(text) => {
-                                        setReferalCode(text);
-                                    }}
-                                />
-                            </View>
-                            {errMobileNo && <Text className="text-red-500 font-semibold">Mobile number is required</Text>}
-                        </View> : null
-                    }
-
-                    <View className="w-[99%] mt-1 h-[10%]" style={{ marginVertical: 1 }}>
-                        <View className="flex-row w-full justify-center items-center border-[0.5px] rounded-[10px]">
-                            <View className="items-center w-[10%] justify-center h-full">
-                                <FontAwesome name="lock" size={20} color={"black"} />
-                            </View>
+                    {/* Password Field */}
+                    <View className="mb-4">
+                        <Text className="text-[12px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Password
+                        </Text>
+                        <View
+                            className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 ${
+                                errPassword ? "border-red-400 bg-red-50/20" : "border-slate-200"
+                            }`}
+                        >
+                            <Ionicons
+                                name="lock-closed-outline"
+                                size={18}
+                                color={errPassword ? "#ef4444" : "#64748b"}
+                                style={{ marginRight: 10 }}
+                            />
                             <TextInput
-                                style={{ color: "black", paddingHorizontal: 10, height: 40, width: '80%' }}
-                                placeholder="Enter password"
-                                placeholderTextColor="gray"
+                                className="flex-1 text-[14px] text-slate-900 font-medium h-full"
+                                placeholder="Create password (min. 6 characters)"
+                                placeholderTextColor="#94a3b8"
                                 secureTextEntry={!passwordVisible}
+                                value={password}
                                 onChangeText={(txt) => {
                                     setPassword(txt);
-                                    setErrPassword(!txt);
+                                    if (errPassword) setErrPassword("");
                                 }}
                             />
-                            <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)} className="w-[10%]">
-                                <FontAwesome name={!passwordVisible ? "eye" : "eye-slash"} size={20} color="black" />
+                            <TouchableOpacity
+                                onPress={() => setPasswordVisible(!passwordVisible)}
+                                className="p-1"
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons
+                                    name={passwordVisible ? "eye-off-outline" : "eye-outline"}
+                                    size={19}
+                                    color="#64748b"
+                                />
                             </TouchableOpacity>
                         </View>
-                        {errPassword && <Text className="text-red-500 font-semibold">Password is required</Text>}
+                        {Boolean(errPassword) && (
+                            <Text className="text-[11px] text-red-500 font-semibold mt-1 ml-1">
+                                {errPassword}
+                            </Text>
+                        )}
                     </View>
 
-                    <View className="w-[99%] mt-1 h-[10%]" style={{ marginVertical: 1 }}>
-                        <View className="flex-row w-full justify-center items-center border-[0.5px] rounded-[10px]">
-                            <View className="items-center w-[10%] justify-center h-full">
-                                <FontAwesome name="lock" size={20} color={"black"} />
-                            </View>
+                    {/* Confirm Password Field */}
+                    <View className="mb-4">
+                        <Text className="text-[12px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Confirm Password
+                        </Text>
+                        <View
+                            className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 ${
+                                errConfirmPassword ? "border-red-400 bg-red-50/20" : "border-slate-200"
+                            }`}
+                        >
+                            <Ionicons
+                                name="lock-closed-outline"
+                                size={18}
+                                color={errConfirmPassword ? "#ef4444" : "#64748b"}
+                                style={{ marginRight: 10 }}
+                            />
                             <TextInput
-                                style={{ color: "black", paddingHorizontal: 10, height: 40, width: '80%' }}
-                                placeholder="Confirm password"
-                                placeholderTextColor="gray"
+                                className="flex-1 text-[14px] text-slate-900 font-medium h-full"
+                                placeholder="Re-enter password"
+                                placeholderTextColor="#94a3b8"
                                 secureTextEntry={!confirmPasswordVisible}
+                                value={confirmPassword}
                                 onChangeText={(txt) => {
                                     setConfirmPassword(txt);
-                                    setErrConfirmPassword(!txt);
+                                    if (errConfirmPassword) setErrConfirmPassword("");
                                 }}
                             />
-                            <TouchableOpacity onPress={() => setConfirmPasswordVisible(!confirmPasswordVisible)} className="w-[10%]">
-                                <FontAwesome name={!confirmPasswordVisible ? "eye" : "eye-slash"} size={20} color="black" />
+                            <TouchableOpacity
+                                onPress={() => setConfirmPasswordVisible(!confirmPasswordVisible)}
+                                className="p-1"
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons
+                                    name={confirmPasswordVisible ? "eye-off-outline" : "eye-outline"}
+                                    size={19}
+                                    color="#64748b"
+                                />
                             </TouchableOpacity>
                         </View>
-                        {errConfirmPassword && <Text className="text-red-500 font-semibold">Confirm Password is required</Text>}
+                        {Boolean(errConfirmPassword) && (
+                            <Text className="text-[11px] text-red-500 font-semibold mt-1 ml-1">
+                                {errConfirmPassword}
+                            </Text>
+                        )}
                     </View>
 
-                    <View className="mt-4 w-full justify-center items-center">
-                        {
-                            showLoader ? (
-                                <View className="w-[150px] h-[40px] bg-[#9400FF] justify-center items-center rounded-[10px]">
-                                    <ActivityIndicator color={"white"} size={"small"}/>
+                    {/* Referral Code Badge / Input Button */}
+                    <View className="mb-4">
+                        {referalcode ? (
+                            <View className="flex-row items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl py-2 px-3">
+                                <View className="flex-row items-center flex-1 mr-2">
+                                    <Ionicons name="gift" size={18} color="#059669" style={{ marginRight: 8 }} />
+                                    <View>
+                                        <Text className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+                                            Referral Applied
+                                        </Text>
+                                        <Text className="text-[13px] font-black text-emerald-800 tracking-wider">
+                                            {referalcode}
+                                        </Text>
+                                    </View>
                                 </View>
-                            ) : (
-                                <TouchableOpacity onPress={checkCondition} className="w-[150px] h-[40px] justify-center items-center rounded-[10px]" style={{backgroundColor:COLORS.primary}}>
-                                    <Text className="text-white font-semibold text-[18px]">Continue</Text>
+                                <TouchableOpacity
+                                    onPress={() => setReferalShow(true)}
+                                    className="bg-emerald-100 px-2.5 py-1 rounded-lg"
+                                >
+                                    <Text className="text-[11px] font-bold text-emerald-800">Change</Text>
                                 </TouchableOpacity>
-                            )
-                        }
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                onPress={() => setReferalShow(true)}
+                                className="flex-row items-center justify-center bg-slate-50 border border-dashed border-slate-300 rounded-xl py-2.5 px-3"
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="gift-outline" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                                <Text className="text-[12px] font-bold" style={{ color: COLORS.primary }}>
+                                    Have a referral code? Tap to enter
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
 
-                        <View className="flex-row mt-5">
-                            <Text className="text-black text-[14px] font-semibold">Already have an account?</Text>
-                            <TouchableOpacity className="ml-1" onPress={() => navigation.navigate("Login")}>
-                                <Text className="text-[14px] font-semibold" style={{color: COLORS.primary}}>Login</Text>
+                    {/* Submit Button */}
+                    <TouchableOpacity
+                        onPress={checkCondition}
+                        className="w-full bg-[#E0211F] h-12 rounded-xl justify-center items-center mt-3 shadow-sm"
+                        style={{ elevation: 2 }}
+                        activeOpacity={0.8}
+                    >
+                        <Text className="text-white font-bold text-[16px]">
+                            Continue
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Login Link */}
+                <View className="flex-row justify-center items-center">
+                    <Text className="text-slate-600 text-[14px] font-medium">
+                        Already have an account?
+                    </Text>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate("Login")}
+                        className="ml-1.5 py-1"
+                        activeOpacity={0.7}
+                    >
+                        <Text className="text-[14px] font-bold" style={{ color: COLORS.primary }}>
+                            Log In
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+
+            {/* Referral Code Modal */}
+            <Modal
+                visible={referalShow}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setReferalShow(false)}
+            >
+                <View className="flex-1 justify-center items-center bg-black/50 px-5">
+                    <View
+                        className="w-full max-w-[340px] bg-white rounded-3xl p-6 items-center border border-slate-100"
+                        style={{ elevation: 6 }}
+                    >
+                        <View className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 justify-center items-center mb-3">
+                            <Ionicons name="gift" size={28} color="#d97706" />
+                        </View>
+
+                        <Text className="text-[18px] font-black text-slate-900 text-center">
+                            Enter Referral Code
+                        </Text>
+                        <Text className="text-[12px] text-slate-500 text-center mt-1 mb-4 leading-4">
+                            Claim special sign-up benefits and rewards from your friend's invite.
+                        </Text>
+
+                        <TextInput
+                            className="w-full h-12 bg-slate-50 border border-slate-200 rounded-xl px-4 text-center font-bold text-[15px] text-slate-900 tracking-widest uppercase mb-4"
+                            placeholder="REFERRAL CODE"
+                            placeholderTextColor="#94a3b8"
+                            autoCapitalize="characters"
+                            value={referalcode}
+                            onChangeText={(txt) => setReferalCode(txt.toUpperCase())}
+                        />
+
+                        <View className="w-full flex-row">
+                            <TouchableOpacity
+                                onPress={() => setReferalShow(false)}
+                                className="flex-1 h-11 bg-slate-100 rounded-xl justify-center items-center mr-2"
+                                activeOpacity={0.7}
+                            >
+                                <Text className="text-slate-600 font-bold text-[13px]">Skip</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={applyReferral}
+                                className="flex-1 h-11 bg-[#E0211F] rounded-xl justify-center items-center"
+                                activeOpacity={0.8}
+                            >
+                                <Text className="text-white font-bold text-[13px]">Apply</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </View>
-                <Modal
-                    visible={openModal}
-                    transparent
-                    animationType="fade"
-                    onRequestClose={toggleModal}
-                >
-                    <View className="flex-1 justify-center items-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-                        <View className="w-[90%] bg-white shadow-black p-6 rounded-2xl items-center" style={{ elevation: 5 }}>
-                            <Text className="text-lg font-bold text-black mb-3">OTP Verify</Text>
-                            <Text className="text-center text-black mb-5">Check your email id :  <Text className="text-blue-700">{email}</Text></Text>
-                            <View className="mt-5">
-                                <Text className="text-black text-[12px] font-bold">Enter Your OTP</Text>
-                                <View>
-                                    <OneTimeCodeTextComponent
-                                        value={otp}
-                                        onChangeText={(value: string) => setOtp(value)}
-                                    />
-                                </View>
-                            </View>
-                            <View className="mt-5">
-                                <TouchableOpacity onPress={checkOtp} className="w-[150px] h-[40px] bg-[#9400FF] justify-center items-center rounded-[10px]">
-                                    <Text className="text-white text-[18px] font-bold">Done</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </Modal>
+            </Modal>
 
-            </View>
+            {/* OTP Verification Modal */}
+            <Modal
+                visible={openModal}
+                transparent
+                animationType="fade"
+                onRequestClose={toggleModal}
+            >
+                <View className="flex-1 justify-center items-center bg-black/50 px-5">
+                    <View
+                        className="w-full max-w-[340px] bg-white rounded-3xl p-6 items-center border border-slate-100"
+                        style={{ elevation: 6 }}
+                    >
+                        <View className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 justify-center items-center mb-3">
+                            <Ionicons name="mail" size={26} color={COLORS.primary} />
+                        </View>
+
+                        <Text className="text-[19px] font-black text-slate-900 text-center">
+                            Verify Your Email
+                        </Text>
+                        <Text className="text-[12px] text-slate-500 text-center mt-1 mb-4 leading-4">
+                            We've sent a 6-digit confirmation code to:{"\n"}
+                            <Text className="font-bold text-slate-800">{email}</Text>
+                        </Text>
+
+                        <View className="w-full my-2">
+                            <OneTimeCodeTextComponent
+                                value={otp}
+                                onChangeText={(value: string) => setOtp(value)}
+                            />
+                        </View>
+
+                        <TouchableOpacity
+                            onPress={checkOtp}
+                            className="w-full bg-[#E0211F] h-12 rounded-xl justify-center items-center mt-5 shadow-sm"
+                            style={{ elevation: 2 }}
+                            activeOpacity={0.8}
+                        >
+                            <Text className="text-white font-bold text-[15px]">
+                                Verify & Create Account
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={toggleModal}
+                            className="mt-3.5 py-1"
+                            activeOpacity={0.7}
+                        >
+                            <Text className="text-slate-500 font-semibold text-[12px]">
+                                Change Email / Cancel
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };

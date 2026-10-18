@@ -21,3 +21,38 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+allprojects {
+    ext {
+        REACT_NATIVE_NODE_MODULES_DIR = "${rootProject.projectDir}/../node_modules/react-native"
+    }
+    repositories {
+   google()
+    maven {
+      // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+      url "$rootDir/../node_modules/react-native/android"
+    }
+  }
+  def configure16KB = { proj ->
+        try {
+            proj.android {
+                defaultConfig {
+                    externalNativeBuild {
+                        cmake {
+                            arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON", "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,common-page-size=16384 -Wl,-z,max-page-size=16384"
+                        }
+                        ndkBuild {
+                            arguments "APP_LDFLAGS+=-Wl,-z,common-page-size=16384 -Wl,-z,max-page-size=16384"
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Ignore projects that don't support these properties
+        }
+    }
+
+    plugins.withId('com.android.application') { configure16KB(project) }
+    plugins.withId('com.android.library') { configure16KB(project) }
+
+}

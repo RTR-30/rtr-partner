@@ -13,7 +13,7 @@ export const Get = async (url: string, attachToken = "NoToken"): Promise<any> =>
     if (convertToLowerCase(attachToken) === convertToLowerCase("rtrToken")) {
         headers = { ...(await rtrToken()), };
     }
-    
+
     try {
         const res: any = await axios.get(url, {
             headers: headers,
@@ -107,7 +107,7 @@ export const withoutTokenPost = async (
 };
 
 
-export const withoutTokenPut = async ( url: string, params: any = {}): Promise<any> => {
+export const withoutTokenPut = async (url: string, params: any = {}): Promise<any> => {
     try {
         const res: any = await axios.put(url, params, {
             headers: Noheaders,

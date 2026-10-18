@@ -1,167 +1,227 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
     View,
     Text,
     TouchableOpacity,
-    Image,
-    Modal,
-    ToastAndroid
-} from 'react-native';
-
-import notifee from "@notifee/react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-// import LocalNotification from "../../../Common/Notification/index";
-
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { UpdateBooking } from "./helper";
 import { showError, showSuccess } from "../../../Common/ToastMessage";
+import { COLORS } from "../../../utils/ColorCode";
 
-const RenderList = ({ item, setShowLoader }: any) => {
+interface RenderListProps {
+    item: any;
+    setShowLoader: (show: boolean) => void;
+}
+
+const RenderList = ({ item, setShowLoader }: RenderListProps) => {
     const navigation: any = useNavigation();
-    const [userData, setUserData] = useState<any>(null);
 
     const fetchUpdate = async () => {
         setShowLoader(true);
         const data = {
-            bookingId: item.Id
-        }
+            bookingId: item.Id,
+        };
 
         try {
-            const res = await UpdateBooking(data)
-            showSuccess(res?.data.message);
+            const res = await UpdateBooking(data);
+            showSuccess(res?.data?.message || "Duty accepted successfully!");
             navigation.navigate("MyDuty");
-        } catch (error:any) {
-            showError(error)
+        } catch (error: any) {
+            showError(error?.message || error || "Failed to accept booking");
         } finally {
             setShowLoader(false);
         }
-    }
+    };
 
     const formatDateTime = (dateTime: any, includeTime = true) => {
-        if (!dateTime) return "";
-        const parsedDate = new Date(dateTime);
-        return parsedDate.toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            ...(includeTime && {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-            }),
-        });
+        if (!dateTime) return "Flexible Timing";
+        try {
+            const parsedDate = new Date(dateTime);
+            if (isNaN(parsedDate.getTime())) return String(dateTime);
+            return parsedDate.toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                ...(includeTime && {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                }),
+            });
+        } catch {
+            return String(dateTime);
+        }
     };
 
-    const formatEndDate = (dateTime: any, includeTime = true) => {
+    const formatEndDate = (dateTime: any) => {
         if (!dateTime) return "";
-        const parsedDate = new Date(dateTime);
-        return parsedDate.toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-        });
+        try {
+            const parsedDate = new Date(dateTime);
+            if (isNaN(parsedDate.getTime())) return String(dateTime);
+            return parsedDate.toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            });
+        } catch {
+            return String(dateTime);
+        }
     };
-    
+
+    const isPaid = item?.PaymentStatus?.toLowerCase() === "paid";
+
     return (
-        <View className="w-full mb-3 rounded-2xl border-black shadow-black border-[0.1px] bg-white" style={{ elevation: 3 }}>
-            <View className="flex-row w-full justify-center rounded-t-2xl items-center">
-                <View className="w-[50%] p-2 bg-green-600 rounded-tl-2xl border-[0.3px]">
-                    <Text className="text-white font-bold text-[18px] text-center">{item.Status}</Text>
+        <View
+            className="bg-white rounded-2xl p-4 mb-3 border border-gray-200"
+            style={{ elevation: 3 }}
+        >
+            {/* Header: Status Pill & Estimated Fare */}
+            <View className="flex-row justify-between items-start mb-3">
+                <View className="flex-row items-center bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
+                    <View className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />
+                    <Text className="text-xs font-bold text-emerald-700 tracking-wide">
+                        {item.Status || "Available Duty"}
+                    </Text>
                 </View>
 
-                <View className="w-[50%] p-2 bg-yellow-300 rounded-tr-2xl border-[0.3px]">
-                    <Text className={`text-black font-bold text-[18px] text-center`}>Total   ₹ {item.EstimateAmount}</Text>
+                <View className="items-end">
+                    <Text className="text-[10px] font-bold text-gray-400 tracking-wider">
+                        EST. EARNING
+                    </Text>
+                    <View className="flex-row items-baseline">
+                        <Text
+                            className="text-sm font-bold mr-0.5"
+                            style={{ color: COLORS.primary }}
+                        >
+                            ₹
+                        </Text>
+                        <Text
+                            className="text-[22px] font-black"
+                            style={{ color: COLORS.primary }}
+                        >
+                            {item.EstimateAmount || 0}
+                        </Text>
+                    </View>
                 </View>
             </View>
 
-            <View className="flex-row w-full mt-2 p-1">
-                <View className="w-[50%] justify-center items-center">
-                    <Text className="text-black font-bold text-[14px]">Start Date</Text>
-                    <Text className="text-blue-600 font-bold text-[14px]">{formatDateTime(item?.StartDate)}</Text>
-                </View>
+            {/* Quick Specs Chips */}
+            <View className="flex-row flex-wrap mb-3.5">
+                {/* Hours Chip */}
+                {item.Hours ? (
+                    <View className="flex-row items-center bg-gray-100 px-2.5 py-1 rounded-lg mr-2 mb-1">
+                        <Ionicons name="time-outline" size={13} color="#D97706" />
+                        <Text className="text-xs font-semibold text-gray-700 ml-1.5">
+                            {item.Hours} Hours
+                        </Text>
+                    </View>
+                ) : null}
 
-                {
-                    item.EndDate && (
-                        <View className="w-[50%] justify-center items-center">
-                            <Text className="text-black font-bold text-[14px]">End Date</Text>
-                            <Text className="text-blue-600 font-bold text-[14px]">{formatEndDate(item.EndDate)}</Text>
-                        </View>
-                    )
-                }
+                {/* Gear Type Chip */}
+                {item.GearType ? (
+                    <View className="flex-row items-center bg-gray-100 px-2.5 py-1 rounded-lg mr-2 mb-1">
+                        <Ionicons name="speedometer-outline" size={13} color="#2563EB" />
+                        <Text className="text-xs font-semibold text-gray-700 ml-1.5">
+                            {item.GearType}
+                        </Text>
+                    </View>
+                ) : null}
+
+                {/* Payment Status Chip */}
+                <View
+                    className={`flex-row items-center px-2.5 py-1 rounded-lg mr-2 mb-1 ${
+                        isPaid ? "bg-emerald-50" : "bg-amber-50"
+                    }`}
+                >
+                    <Ionicons
+                        name={isPaid ? "checkmark-circle" : "cash-outline"}
+                        size={13}
+                        color={isPaid ? "#059669" : "#D97706"}
+                    />
+                    <Text
+                        className={`text-xs font-semibold ml-1.5 ${
+                            isPaid ? "text-emerald-700" : "text-amber-700"
+                        }`}
+                    >
+                        {isPaid ? "Prepaid" : "Cash on Duty"}
+                    </Text>
+                </View>
             </View>
 
-            <View className="w-full p-2">
-                <View className="w-full flex-row">
-                    <View className="w-[100%]">
-                        <View className="w-[100%] flex-row">
-                            <View className="w-[25%]">
-                                <Text className="text-black font-bold text-[14px]">Name</Text>
-                            </View>
-                            <View className="w-[75%]">
-                                <Text className="text-blue-600 font-bold text-[14px]"> :   {item.Name}</Text>
-                            </View>
-                        </View>
+            {/* Details Box */}
+            <View className="bg-gray-50 rounded-xl p-3 border border-gray-100 mb-3.5">
+                {/* Pickup Address */}
+                <View className="flex-row items-start">
+                    <View className="w-7 h-7 rounded-full justify-center items-center mr-2.5 mt-0.5 bg-red-50">
+                        <Ionicons name="location" size={14} color={COLORS.primary} />
+                    </View>
+                    <View className="flex-1">
+                        <Text className="text-[10px] font-bold text-gray-400 tracking-wider mb-0.5">
+                            PICKUP LOCATION
+                        </Text>
+                        <Text className="text-[13px] font-bold text-gray-800 leading-5" numberOfLines={2}>
+                            {item.Address || "Customer address specified on booking"}
+                        </Text>
+                    </View>
+                </View>
 
-                        <View className="w-[100%] flex-row">
-                            <View className="w-[25%]">
-                                <Text className="text-black font-bold text-[14px]">Address</Text>
-                            </View>
-                            <View className="w-[75%]">
-                                <Text className="text-blue-600 font-bold text-[14px]"> :   {item.Address}</Text>
-                            </View>
-                        </View>
+                {/* Divider inside details */}
+                <View className="h-[1px] bg-gray-200 my-2.5" />
 
-                        <View className="w-[100%] flex-row">
-                            <View className="w-[25%]">
-                                <Text className="text-black font-bold text-[14px]">Hours</Text>
-                            </View>
-                            <View className="w-[75%]]">
-                                <Text className="text-blue-600 font-bold text-[14px]"> :   {item.Hours}</Text>
-                            </View>
-                        </View>
-
-                        <View className="w-[100%] flex-row">
-                            <View className="w-[25%]">
-                                <Text className="text-black font-bold text-[14px]">Gear Type</Text>
-                            </View>
-                            <View className="w-[75%]">
-                                <Text className="text-blue-600 font-bold text-[14px]"> :   {item.GearType}</Text>
-                            </View>
-                        </View>
-
-                        <View className="w-[100%] flex-row">
-                            <View className="w-[25%]">
-                                <Text className="text-black font-bold text-[14px]">Payment Status</Text>
-                            </View>
-                            <View className="w-[75%]">
-                                <Text className={`${item.PaymentStatus === "UnPaid" ? "text-red-600" : "text-green-600"} font-bold text-[14px]`}> :   {item.PaymentStatus}</Text>
-                            </View>
+                {/* Schedule & Customer Info */}
+                <View className="flex-row justify-between">
+                    {/* Start Date */}
+                    <View className="flex-1 pr-1.5">
+                        <Text className="text-[10px] font-bold text-gray-400 tracking-wider mb-0.5">
+                            START SCHEDULE
+                        </Text>
+                        <View className="flex-row items-center mt-1">
+                            <Ionicons name="calendar-outline" size={13} color="#4B5563" />
+                            <Text className="text-xs font-semibold text-gray-700 ml-1.5">
+                                {formatDateTime(item?.StartDate)}
+                            </Text>
                         </View>
                     </View>
 
-                    {/* <View className="w-[20%] justify-center items-center">
-                        <View className="mt-1 w-full">
-                            <TouchableOpacity className="bg-[#5a639c] rounded-[10px] w-full h-[40px] justify-center items-center">
-                                <Ionicons name="call" size={20} color={"white"} />
-                            </TouchableOpacity>
+                    {/* Customer Name or End Date */}
+                    <View className="flex-1 pr-1.5">
+                        <Text className="text-[10px] font-bold text-gray-400 tracking-wider mb-0.5">
+                            {item.EndDate ? "RETURN SCHEDULE" : "CUSTOMER"}
+                        </Text>
+                        <View className="flex-row items-center mt-1">
+                            <Ionicons
+                                name={item.EndDate ? "repeat-outline" : "person-outline"}
+                                size={13}
+                                color="#4B5563"
+                            />
+                            <Text className="text-xs font-semibold text-gray-700 ml-1.5" numberOfLines={1}>
+                                {item.EndDate
+                                    ? formatEndDate(item.EndDate)
+                                    : item.Name || "Customer"}
+                            </Text>
                         </View>
-
-                        <View className="mt-5 w-full">
-                            <TouchableOpacity className="bg-[#5a639c] rounded-[10px] w-full h-[40px] justify-center items-center">
-                                <Text className="text-white text-center font-bold text-[16px]">View</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View> */}
+                    </View>
                 </View>
             </View>
 
-            <View className="p-2 w-full justify-around flex-row items-center">
-                <TouchableOpacity onPress={()=>fetchUpdate()} className="w-[70%] justify-center items-center bg-[#5a639c] rounded-xl">
-                    <Text className="text-center text-white font-bold text-[18px]">Click Here To Accept</Text>
-                </TouchableOpacity>
-            </View>
-        </View >
+            {/* Accept Duty Action Button */}
+            <TouchableOpacity
+                activeOpacity={0.88}
+                onPress={fetchUpdate}
+                className="rounded-xl py-3.5 px-4 flex-row justify-between items-center"
+                style={{ backgroundColor: COLORS.primary, elevation: 3 }}
+            >
+                <View className="flex-row items-center">
+                    <Ionicons name="flash" size={18} color="#FFF" style={{ marginRight: 8 }} />
+                    <Text className="text-[15px] font-extrabold text-white tracking-wide">
+                        Accept This Duty
+                    </Text>
+                </View>
+                <Ionicons name="arrow-forward" size={18} color="#FFF" />
+            </TouchableOpacity>
+        </View>
     );
 };
 

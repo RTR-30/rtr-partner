@@ -20,46 +20,17 @@ import RequestList from "../Component/PrivateComponent/Payment/RequestList";
 import PackagePurchase from "../Common/PackagePurchase";
 import TripDetails from "../Component/PrivateComponent/Duty/TripDetails";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import Icon from "react-native-vector-icons/Ionicons";
-import { COLORS } from "../utils/ColorCode";
+import CustomTabBar from "./CustomTabBar";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const TabNavigator = () => (
     <Tab.Navigator
-        screenOptions={({ route }) => ({
+        tabBar={(props) => <CustomTabBar {...props} />}
+        screenOptions={{
             headerShown: false,
-            tabBarIcon: ({ focused, color, size }) => {
-                let iconName;
-
-                if (route.name === "Home") {
-                    iconName = focused ? "home" : "home-outline";
-                } else if (route.name === "Duty") {
-                    iconName = focused ? "briefcase" : "briefcase-outline";
-                } else if (route.name === "MyDuty") {
-                    iconName = focused ? "clipboard" : "clipboard-outline";
-                } else if (route.name === "Wallet") {
-                    iconName = focused ? "card" : "card-outline";
-                } else if (route.name === "Menu") {
-                    iconName = focused ? "menu" : "menu-outline";
-                } 
-
-                return <Icon name={iconName} size={size} color={color} />;
-            },
-            tabBarActiveTintColor: COLORS.primary, 
-            tabBarInactiveTintColor: "gray",  
-            tabBarStyle: {
-                backgroundColor: "#f8f9fa", 
-                borderTopWidth: 0,          
-                height: 60,                 
-                paddingBottom: 10,
-            },
-            tabBarLabelStyle: {
-                fontSize: 12,               
-                fontWeight: "600",          
-            },
-        })}
+        }}
     >
         <Tab.Screen name="Home" component={Home} />
         <Tab.Screen name="Duty" component={DutyScreen} />
@@ -67,7 +38,7 @@ const TabNavigator = () => (
         <Tab.Screen name="Wallet" component={PaymentScreen} />
         <Tab.Screen name="Menu" component={MenuScreen} />
     </Tab.Navigator>
-)
+);
 
 const NavigationPage = () => {
     return (

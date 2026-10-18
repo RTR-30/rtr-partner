@@ -1,4 +1,3 @@
-import { useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
     View,
@@ -9,161 +8,273 @@ import {
     TextInput,
     TouchableOpacity,
     ScrollView,
-    ToastAndroid
 } from "react-native";
-
-import FontAwesome from "react-native-vector-icons/FontAwesome";
+import { useNavigation } from "@react-navigation/native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FetchLogin } from "./helper";
 import Loader from "../../../Common/Loader";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useDispatch } from "react-redux";
 import { COLORS } from "../../../utils/ColorCode";
 import { showError } from "../../../Common/ToastMessage";
 
-const LoginImg = require('../../../../assets/Imgs/CarLogin.png');
-const Logo = require("../../../../assets/Imgs/Logo.png")
+const Logo = require("../../../../assets/Imgs/Logo.png");
 
 const Login = () => {
     const navigation: any = useNavigation();
-    const dispatch = useDispatch();
 
     const [showLoader, setShowLoader] = useState<boolean>(false);
+    const [email, setEmail] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
+    const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
 
-    const [email, setEmail] = useState<any>(null);
-    const [password, setPassword] = useState<any>(null);
-
-    const [passwordVisible, setPasswordVisible] = useState(false);
-
-    const [errEmail, setErrEmail] = useState<boolean>(false);
-    const [errPassword, setErrPassword] = useState<boolean>(false);
+    const [errEmail, setErrEmail] = useState<string>("");
+    const [errPassword, setErrPassword] = useState<string>("");
 
     const checkCondition = () => {
-        if (!email || !password) {
-            setErrEmail(!email);
-            setErrPassword(!password)
+        const emailTrimmed = email ? email.trim() : "";
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        let isValid = true;
+
+        if (!emailTrimmed) {
+            setErrEmail("Email address is required");
+            isValid = false;
+        } else if (!emailRegex.test(emailTrimmed)) {
+            setErrEmail("Enter a valid email address");
+            isValid = false;
         } else {
+            setErrEmail("");
+        }
+
+        if (!password) {
+            setErrPassword("Password is required");
+            isValid = false;
+        } else {
+            setErrPassword("");
+        }
+
+        if (isValid) {
             handleLogin();
         }
-    }
+    };
 
     const handleLogin = async () => {
         setShowLoader(true);
 
         const data: any = {
-            email: email,
-            password: password
-        }
-        
+            email: email.trim(),
+            password: password,
+        };
+
         try {
             const response = await FetchLogin(data);
-            
-            if (response.status === 200) {
+
+            if (response?.status === 200) {
                 await AsyncStorage.setItem("UserData", JSON.stringify(response.data.user));
                 await AsyncStorage.setItem("token", response.data.token);
                 navigation.navigate("Home");
-                setEmail(null);
-                setPassword(null);
-            };
-            
-        } catch (error:any) {
-            showError("Login failed. Please try again.");
+                setEmail("");
+                setPassword("");
+            } else {
+                showError(response?.data?.message || "Invalid email or password");
+            }
+        } catch (error: any) {
+            if (error?.response?.data?.message) {
+                showError(error.response.data.message);
+            } else {
+                showError(error?.message || "Login failed. Please try again.");
+            }
         } finally {
             setShowLoader(false);
         }
-    }
+    };
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
-            <StatusBar backgroundColor={COLORS.primary} barStyle={"light-content"} />
+        <SafeAreaView className="flex-1 bg-slate-50">
+            <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
 
-            {
-                showLoader && (
-                    <View className="h-full w-full absolute" style={{zIndex:10}}>
-                        <Loader />
+            {showLoader && (
+                <View className="h-full w-full absolute" style={{ zIndex: 10 }}>
+                    <Loader />
+                </View>
+            )}
+
+            <ScrollView
+                className="flex-1"
+                contentContainerStyle={{
+                    flexGrow: 1,
+                    paddingHorizontal: 20,
+                    paddingTop: 24,
+                    paddingBottom: 36,
+                    justifyContent: "center",
+                }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
+                {/* Brand Logo & Name Header */}
+                <View className="items-center mb-8">
+                    <View
+                        className="w-20 h-20 rounded-3xl bg-white justify-center items-center p-3 border border-slate-100 mb-4"
+                        style={{ elevation: 3 }}
+                    >
+                        <Image
+                            source={Logo}
+                            className="w-full h-full rounded-2xl"
+                            resizeMode="contain"
+                        />
                     </View>
-                )
-            };
-
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }} className="bg-white">
-                <View className="flex-1 justify-center items-center">
-                    <Image
-                        source={Logo}
-                        className="w-full h-full"
-                        resizeMode="cover"
-                    />
+                    <Text className="text-[24px] font-black tracking-tight text-slate-800">
+                        R<Text style={{ color: COLORS.primary }}>T</Text>R PARTNER
+                    </Text>
+                    <Text className="text-[13px] text-slate-500 font-medium mt-1">
+                        Professional Driver On-Demand Service
+                    </Text>
                 </View>
 
-                <View className="flex-2 justify-center items-center" style={{backgroundColor: COLORS.background}}>
-                    <Text className="text-black-700 text-[20px] text-center font-bold">Login</Text>
-                    <View className="w-full justify-center items-center mt-10">
-                        <View className="flex-row w-[90%] justify-center items-center border-[0.5px] rounded-[10px]">
-                            <FontAwesome name="user" color={"black"} size={20} style={{ alignSelf: 'center' }} />
+                {/* Form Card */}
+                <View
+                    className="bg-white rounded-3xl p-6 border border-slate-100 mb-6"
+                    style={{ elevation: 2 }}
+                >
+                    <Text className="text-[22px] font-black text-slate-900 tracking-tight mb-1">
+                        Welcome Back
+                    </Text>
+                    <Text className="text-[13px] text-slate-500 font-medium mb-6">
+                        Sign in to manage duties, trips and earnings
+                    </Text>
+
+                    {/* Email Field */}
+                    <View className="mb-4">
+                        <Text className="text-[12px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Email Address
+                        </Text>
+                        <View
+                            className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 ${
+                                errEmail ? "border-red-400 bg-red-50/20" : "border-slate-200"
+                            }`}
+                        >
+                            <Ionicons
+                                name="mail-outline"
+                                size={18}
+                                color={errEmail ? "#ef4444" : "#64748b"}
+                                style={{ marginRight: 10 }}
+                            />
                             <TextInput
-                                style={{ color: 'black', width: '90%' }}
-                                placeholder="Enter email id"
-                                placeholderTextColor={"gray"}
-                                onChangeText={(txt: any) => {
+                                className="flex-1 text-[14px] text-slate-900 font-medium h-full"
+                                placeholder="Enter your email"
+                                placeholderTextColor="#94a3b8"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                value={email}
+                                onChangeText={(txt) => {
                                     setEmail(txt);
-                                    setErrEmail(!txt)
+                                    if (errEmail) setErrEmail("");
                                 }}
                             />
                         </View>
-                        {errEmail && <Text className="text-red-600 font-semibold w-full ml-10">mail is required</Text>}
+                        {Boolean(errEmail) && (
+                            <Text className="text-[11px] text-red-500 font-semibold mt-1 ml-1">
+                                {errEmail}
+                            </Text>
+                        )}
                     </View>
 
-                    <View className="w-full justify-center items-center mt-5">
-                        <View className="flex-row w-[90%] justify-center items-center border-[0.5px] rounded-[10px]">
-                            <FontAwesome name="lock" size={20} color={"black"} style={{ alignSelf: 'center' }} />
+                    {/* Password Field */}
+                    <View className="mb-2">
+                        <Text className="text-[12px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Password
+                        </Text>
+                        <View
+                            className={`flex-row items-center bg-slate-50 border rounded-xl px-3 h-12 ${
+                                errPassword ? "border-red-400 bg-red-50/20" : "border-slate-200"
+                            }`}
+                        >
+                            <Ionicons
+                                name="lock-closed-outline"
+                                size={18}
+                                color={errPassword ? "#ef4444" : "#64748b"}
+                                style={{ marginRight: 10 }}
+                            />
                             <TextInput
-                                style={{ color: 'black', width: '80%' }}
-                                placeholder="Enter password"
-                                placeholderTextColor={"gray"}
+                                className="flex-1 text-[14px] text-slate-900 font-medium h-full"
+                                placeholder="Enter your password"
+                                placeholderTextColor="#94a3b8"
                                 secureTextEntry={!passwordVisible}
-                                onChangeText={(txt: any) => {
+                                value={password}
+                                onChangeText={(txt) => {
                                     setPassword(txt);
-                                    setErrPassword(!txt);
+                                    if (errPassword) setErrPassword("");
                                 }}
                             />
-                            <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)} style={{ width: '10%' }}>
-                                <FontAwesome name={!passwordVisible ? "eye" : "eye-slash"} size={20} color="black" />
+                            <TouchableOpacity
+                                onPress={() => setPasswordVisible(!passwordVisible)}
+                                className="p-1"
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons
+                                    name={passwordVisible ? "eye-off-outline" : "eye-outline"}
+                                    size={19}
+                                    color="#64748b"
+                                />
                             </TouchableOpacity>
                         </View>
-                        {errPassword && <Text className="text-red-600 font-semibold w-full ml-10">password is required</Text>}
-
-                    </View>
-                    <View className="w-full">
-                        <TouchableOpacity className="self-end mr-5" onPress={()=>navigation.navigate("ForgetPassword")}>
-                            <Text className="text-[16px] font-bold" style={{color: COLORS.primary}}>Forget Password</Text>
-                        </TouchableOpacity>
+                        {Boolean(errPassword) && (
+                            <Text className="text-[11px] text-red-500 font-semibold mt-1 ml-1">
+                                {errPassword}
+                            </Text>
+                        )}
                     </View>
 
-                    <View className="mt-10 w-[90%] justify-center items-center">
+                    {/* Forgot Password Link */}
+                    <View className="items-end mb-4 pt-1">
                         <TouchableOpacity
-                            onPress={checkCondition} style={{backgroundColor: COLORS.primary}}
-                            className="w-[50%] h-[40px] justify-center items-center rounded-[10px]"
+                            onPress={() => navigation.navigate("ForgetPassword")}
+                            className="py-1"
+                            activeOpacity={0.7}
                         >
-                            <Text className="text-white text-[18px] font-bold">Login</Text>
+                            <Text
+                                className="text-[13px] font-bold"
+                                style={{ color: COLORS.primary }}
+                            >
+                                Forgot Password?
+                            </Text>
                         </TouchableOpacity>
                     </View>
 
-                    <View className="mb-5 mt-10 flex-row">
-                        <Text className="text-black-500 text-[16px] font-bold">Don't have a account ? </Text>
-                        <TouchableOpacity onPress={() => navigation.navigate("SignUp", { referral: false})}>
-                            <Text className="text-[16px] font-bold" style={{color: COLORS.primary}}>Create Account</Text>
-                        </TouchableOpacity>
-                    </View>
+                    {/* Login CTA Button */}
+                    <TouchableOpacity
+                        onPress={checkCondition}
+                        className="w-full bg-[#E0211F] h-12 rounded-xl justify-center items-center shadow-sm"
+                        style={{ elevation: 2 }}
+                        activeOpacity={0.8}
+                    >
+                        <Text className="text-white font-bold text-[16px]">
+                            Sign In
+                        </Text>
+                    </TouchableOpacity>
+                </View>
 
-                    <View className="flex-row mb-3">
-                        <Text className="text-black-500 text-[16px] font-bold">Do have any referal ? </Text>
-                        <TouchableOpacity onPress={() => navigation.navigate("SignUp", { referral: true})}>
-                            <Text className="text-[16px] font-bold" style={{color: COLORS.primary}}>Referal</Text>
-                        </TouchableOpacity>
-                    </View>
+                {/* Create Account Link */}
+                <View className="flex-row justify-center items-center mb-3">
+                    <Text className="text-slate-600 text-[14px] font-medium">
+                        Don't have an account?
+                    </Text>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate("SignUp", { referral: false })}
+                        className="ml-1.5 py-1"
+                        activeOpacity={0.7}
+                    >
+                        <Text
+                            className="text-[14px] font-bold"
+                            style={{ color: COLORS.primary }}
+                        >
+                            Create Account
+                        </Text>
+                    </TouchableOpacity>
                 </View>
 
             </ScrollView>
         </SafeAreaView>
-    )
-}
+    );
+};
 
 export default Login;
