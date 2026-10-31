@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import {
     View,
     Text,
-    SafeAreaView,
     StatusBar,
     Image,
     TextInput,
     TouchableOpacity,
     ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";

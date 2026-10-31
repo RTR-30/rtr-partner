@@ -1,4 +1,4 @@
-export const BaseUrl = "http://10.41.65.206:8000/"
+export const BaseUrl = "http://10.228.211.206:8000/"
 // export const BaseUrl = "http://readytoride.in/";
 export const secretKeyData = "RTRPartner_30012001"
 export const Google_map = "AIzaSyCATOPiFqH1MavVSTy_TKSZ3hfK8II3Www";
@@ -12,6 +12,7 @@ export const verificationTable = "partner-verification/";
 export const paymentBase = "payment";
 export const packageBase = "package";
 export const FeedBackBase = "feedback";
+export const contentBase = "content/";
 
 export const Auth = {
     signupapi: "partner-createUser",
@@ -82,4 +83,11 @@ export const PackageApis = {
 export const FeedbackApis = {
     Tags: '/tags?targetType=user',
     Submit: '/submit'
+}
+
+export const contentApis = {
+    terms: 'terms?app_type=partner',
+    termsByAppType: (appType: string = 'partner') => `terms?app_type=${appType}`,
+    contactUs: 'contact-us?app_type=partner',
+    contactUsByAppType: (appType: string = 'partner') => `contact-us?app_type=${appType}`
 }

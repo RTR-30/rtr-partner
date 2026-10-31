@@ -9,8 +9,8 @@ import {
     RefreshControl,
     ScrollView,
     StatusBar,
-    SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import Loader from "../../../Common/Loader";
 import { fetchAllDuty, gearTypeService } from "./helper";
@@ -167,7 +167,7 @@ const DutyScreen = () => {
     );
 
     return (
-        <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.primary }}>
+        <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.primary }} edges={['top', 'left', 'right']}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
             {/* Top Branded App Header */}

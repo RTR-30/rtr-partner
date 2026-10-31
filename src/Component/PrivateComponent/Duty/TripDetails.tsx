@@ -1,5 +1,6 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
 import React, { useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
     View,
     Text,
@@ -26,10 +27,10 @@ const formatDateTime = (dateString: string | undefined): string => {
 const TripDetails = () => {
     const navigation = useNavigation();
     const route = useRoute();
-    const { item }: { item: TripItem } = route.params || { item: {} as TripItem };
+    const { item } = (route.params as { item: TripItem }) || { item: {} as TripItem };
 
     return (
-        <View style={{ width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }}>
             <View style={{ width: "80%", backgroundColor: "white", borderRadius: 20 }}>
                 <View style={{ width: "100%", height: '15%', padding: 10, backgroundColor: '#5a639c', borderTopLeftRadius: 20, borderTopRightRadius: 20, justifyContent: 'space-between', flexDirection: 'row' }}>
                     <View style={{ justifyContent: 'center' }}>
@@ -58,7 +59,7 @@ const TripDetails = () => {
                     </TouchableOpacity>
                 </View>
             </View>
-        </View>
+        </SafeAreaView>
     );
 };
 

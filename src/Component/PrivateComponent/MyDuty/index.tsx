@@ -6,10 +6,10 @@ import {
     TouchableOpacity,
     RefreshControl,
     StatusBar,
-    SafeAreaView,
     Modal,
     StyleSheet,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Header from "../../../Common/Header";
@@ -66,7 +66,7 @@ const MyDuty = () => {
     };
 
     return (
-        <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.primary }}>
+        <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.primary }} edges={['top', 'left', 'right']}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
             {/* Dead-Center Fullscreen Loading Modal */}

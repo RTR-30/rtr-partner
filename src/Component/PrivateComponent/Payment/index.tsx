@@ -7,12 +7,12 @@ import {
     Modal,
     TextInput,
     StatusBar,
-    SafeAreaView,
     ScrollView,
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../../Common/Header";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import {
@@ -324,7 +324,7 @@ const PaymentScreen = () => {
     );
 
     return (
-        <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.primary }}>
+        <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.primary }} edges={['top', 'left', 'right']}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
             {/* Header */}

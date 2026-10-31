@@ -28,7 +28,7 @@ const InitialPage = () => {
     return (
         <View style={{ flex: 1, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }}>
             <StatusBar backgroundColor={COLORS.primary} barStyle={"light-content"} />
-            <Text>Initial Page Loading...</Text>
+            {/* <Text>Initial Page Loading...</Text> */}
         </View>
     )
 }

@@ -6,9 +6,9 @@ import {
     Image,
     ScrollView,
     StatusBar,
-    SafeAreaView,
     Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../../Common/Header";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -107,9 +107,9 @@ const MenuScreen = () => {
             title: "SUPPORT & HELPDESK",
             items: [
                 {
-                    title: "Help & Feedback",
-                    subtitle: "Frequently asked questions & app feedback",
-                    icon: "help-buoy",
+                    title: "Terms & Conditions",
+                    subtitle: "Partner terms, policies & guidelines",
+                    icon: "document-text",
                     iconColor: "#D97706",
                     iconBg: "bg-amber-50",
                     route: "HelpAndFeedback",
@@ -127,7 +127,7 @@ const MenuScreen = () => {
     ];
 
     return (
-        <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.primary }}>
+        <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.primary }} edges={['top', 'left', 'right']}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
             {/* Header Bar */}

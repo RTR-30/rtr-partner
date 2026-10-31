@@ -2,12 +2,12 @@ import React, { useEffect } from "react";
 import NavigationPage from "./src/AuthScreen/navigationPage";
 import { Provider } from "react-redux";
 import store from "./src/redux/store";
-import messaging from "@react-native-firebase/messaging";
 import { OneSignal, LogLevel } from 'react-native-onesignal';
 import { AppID } from "./environment/ApiManager";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS } from './src/utils/ColorCode';
 import { AppState } from "react-native";
+import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 import { setStatus } from "./src/redux/reduxReducer";
 
 const App = () => {
@@ -44,9 +44,11 @@ const App = () => {
   }, []);
 
   return (
-    <Provider store={store}>
-      <NavigationPage />
-    </Provider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <Provider store={store}>
+        <NavigationPage />
+      </Provider>
+    </SafeAreaProvider>
   )
 }
 

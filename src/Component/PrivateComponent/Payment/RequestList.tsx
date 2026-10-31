@@ -5,11 +5,11 @@ import {
     TouchableOpacity,
     FlatList,
     StatusBar,
-    SafeAreaView,
     RefreshControl,
     ActivityIndicator,
     Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../../Common/Header";
 import { COLORS } from "../../../utils/ColorCode";
 import Loader from "../../../Common/Loader";

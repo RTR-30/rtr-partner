@@ -6,13 +6,13 @@ import {
     Modal,
     Image,
     ScrollView,
-    SafeAreaView,
     TextInput,
     StatusBar,
     StyleSheet,
     ActivityIndicator,
     Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import PaymentRender from "./PaymentRender";
 import { showError, showSuccess } from "../ToastMessage";
 import { PaymentProcessService, PurchacePackageService } from "./helper";

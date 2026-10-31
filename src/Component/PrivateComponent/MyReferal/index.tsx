@@ -5,11 +5,11 @@ import {
     Text,
     TouchableOpacity,
     View,
-    SafeAreaView,
     StatusBar,
     Share,
     RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Clipboard from "@react-native-clipboard/clipboard";
 import Ionicons from "react-native-vector-icons/Ionicons";

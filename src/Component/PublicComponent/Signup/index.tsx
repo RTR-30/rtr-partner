@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
     View,
     Text,
-    SafeAreaView,
     StatusBar,
     TextInput,
     Image,
@@ -10,6 +9,7 @@ import {
     ScrollView,
     TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { fetchSignUp, signUpVerifyingMail, signUpVerifyingOtp } from "./helper";

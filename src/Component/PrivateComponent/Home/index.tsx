@@ -7,13 +7,13 @@ import {
     Alert,
     Switch,
     StatusBar,
-    SafeAreaView,
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
     Image,
     Dimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
@@ -314,7 +314,7 @@ const Home = () => {
     const isVerified = userData?.verify !== "false";
 
     return (
-        <SafeAreaView style={styles.safeContainer}>
+        <SafeAreaView style={styles.safeContainer} edges={['top', 'left', 'right']}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
             {/* Top Professional App Header */}
@@ -425,7 +425,7 @@ const Home = () => {
                     <MapView
                         ref={mapRef}
                         provider={PROVIDER_GOOGLE}
-                        style={StyleSheet.absoluteFillObject}
+                        style={StyleSheet.absoluteFill}
                         initialRegion={region}
                         showsUserLocation={false}
                         showsMyLocationButton={false}
@@ -715,6 +715,17 @@ const Home = () => {
                         >
                             <Ionicons name="help-circle-outline" size={15} color="#475569" />
                             <Text style={styles.quickLinkText}>Support</Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.quickLinkDivider} />
+
+                        <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => navigation.navigate("HelpAndFeedback")}
+                            style={styles.quickLinkItem}
+                        >
+                            <Ionicons name="document-text-outline" size={15} color="#475569" />
+                            <Text style={styles.quickLinkText}>Terms</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

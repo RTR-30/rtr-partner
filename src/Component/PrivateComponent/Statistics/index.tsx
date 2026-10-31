@@ -6,10 +6,10 @@ import {
     ScrollView,
     FlatList,
     ActivityIndicator,
-    SafeAreaView,
     StatusBar,
     RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../../Common/Header";
 import { COLORS } from "../../../utils/ColorCode";
 import Ionicons from "react-native-vector-icons/Ionicons";
