@@ -128,6 +128,8 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    implementation("androidx.work:work-runtime:2.9.1")
+    implementation("com.google.guava:guava:33.3.1-android")
     implementation 'com.facebook.fresco:animated-gif:3.6.0'
     implementation project(':react-native-maps')
     implementation 'com.google.android.gms:play-services-maps:20.0.0'

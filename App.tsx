@@ -9,6 +9,7 @@ import { COLORS } from './src/utils/ColorCode';
 import { AppState } from "react-native";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 import { setStatus } from "./src/redux/reduxReducer";
+import { enableBackgroundIconSync, syncIconNow } from "./src/services/festivalIcon";
 
 const App = () => {
 
@@ -24,12 +25,21 @@ const App = () => {
   };
 
   useEffect(() => {
+    // 1. Initialize WorkManager background periodic scheduler
+    enableBackgroundIconSync();
+
+    // 2. Perform immediate sync on app launch
+    syncIconNow();
+
     const subscription = AppState.addEventListener(
       "change",
       (nextAppState) => {
         if (nextAppState === "background" || nextAppState === "inactive") {
           // App minimized or moved to background
           store.dispatch(setStatus(false));
+        } else if (nextAppState === "active") {
+          // Re-sync icon when returning to active foreground
+          syncIconNow();
         }
       }
     );
