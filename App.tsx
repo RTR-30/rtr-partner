@@ -10,6 +10,7 @@ import { AppState } from "react-native";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 import { setStatus } from "./src/redux/reduxReducer";
 import { enableBackgroundIconSync, syncIconNow } from "./src/services/festivalIcon";
+import NetworkCheck from "./src/Common/NetworkCheck";
 
 const App = () => {
 
@@ -57,6 +58,7 @@ const App = () => {
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <Provider store={store}>
         <NavigationPage />
+        <NetworkCheck />
       </Provider>
     </SafeAreaProvider>
   )

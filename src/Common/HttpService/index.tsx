@@ -2,11 +2,26 @@ import axios from "axios";
 import { convertToLowerCase } from "../../utils/secureFile";
 import { showError } from "../ToastMessage";
 import { rtrToken } from "./headers";
+import { networkManager } from "../NetworkCheck/networkManager";
 
 const Noheaders: any = {
     "Content-Type": "application/json",
 };
 
+const handleHttpError = (error: any) => {
+    if (
+        !error?.response &&
+        (error?.message === "Network Error" ||
+            error?.code === "ERR_NETWORK" ||
+            error?.code === "ECONNABORTED" ||
+            (typeof error?.message === "string" &&
+                error.message.toLowerCase().includes("network error")))
+    ) {
+        networkManager.notifyNetworkFailure();
+    } else {
+        showError(error);
+    }
+};
 
 export const Get = async (url: string, attachToken = "NoToken"): Promise<any> => {
     let headers = {};
@@ -20,7 +35,7 @@ export const Get = async (url: string, attachToken = "NoToken"): Promise<any> =>
         })
         return res
     } catch (error) {
-        showError(error)
+        handleHttpError(error);
     }
 }
 
@@ -37,7 +52,7 @@ export const Post = async (url: string, params: any = {}, attachToken = "NoToken
         });
         return res;
     } catch (error: any) {
-        showError(error)
+        handleHttpError(error);
     }
 }
 
@@ -50,7 +65,7 @@ export const Put = async (url: string, params: any = {}, attachToken: string = "
         const res: any = await axios.put(url, params, { headers: headers });
         return res;
     } catch (error: any) {
-        showError(error)
+        handleHttpError(error);
     }
 }
 
@@ -63,7 +78,7 @@ export const Delete = async (url: string, attachToken: string = ""): Promise<any
         const res: any = await axios.delete(url, { headers: headers });
         return res;
     } catch (error: any) {
-        showError(error)
+        handleHttpError(error);
     }
 }
 
@@ -76,7 +91,7 @@ export const Patch = async (url: string, params: any = {}, attachToken = "NoToke
         const res: any = await axios.patch(url, params, { headers: headers });
         return res;
     } catch (error: any) {
-        showError(error)
+        handleHttpError(error);
     }
 };
 
@@ -88,7 +103,7 @@ export const withoutTokenGet = async (url: string) => {
         });
         return res;
     } catch (error: any) {
-        showError(error)
+        handleHttpError(error);
     }
 };
 
@@ -102,7 +117,7 @@ export const withoutTokenPost = async (
         });
         return res;
     } catch (error: any) {
-        showError(error)
+        handleHttpError(error);
     }
 };
 
@@ -114,6 +129,6 @@ export const withoutTokenPut = async (url: string, params: any = {}): Promise<an
         });
         return res;
     } catch (error: any) {
-        showError(error)
+        handleHttpError(error);
     }
 };

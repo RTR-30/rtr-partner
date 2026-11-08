@@ -1,5 +1,5 @@
-export const BaseUrl = "http://10.228.211.206:8000/"
-// export const BaseUrl = "http://readytoride.in/";
+// export const BaseUrl = "http://10.228.211.206:8000/"
+export const BaseUrl = "https://api.readytoride.in/";
 export const secretKeyData = "RTRPartner_30012001"
 export const Google_map = "AIzaSyCATOPiFqH1MavVSTy_TKSZ3hfK8II3Www";
 
